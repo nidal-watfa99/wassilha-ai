@@ -1,93 +1,98 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { ThemeProvider } from "next-themes";
-import api, { apiError } from "@/lib/api";
-import { translations } from "@/i18n/translations";
+/* App context: session (auth), locale, toasts, error translation. */
+import React, {
+  createContext, useCallback, useContext, useEffect, useMemo, useState,
+} from "react";
+import { api } from "../services/api";
+import { LOCALES, localeDir, makeT } from "../i18n";
 
-const AppContext = createContext(null);
-export const useApp = () => useContext(AppContext);
+const AppCtx = createContext(null);
 
-function detectLang() {
-  const saved = localStorage.getItem("wassilha_lang");
-  if (saved === "ar" || saved === "en") return saved;
-  const nav = (navigator.language || navigator.userLanguage || "en").toLowerCase();
-  return nav.startsWith("ar") ? "ar" : "en";
-}
-
-function applyDir(lang) {
-  const dir = lang === "ar" ? "rtl" : "ltr";
-  document.documentElement.setAttribute("dir", dir);
-  document.documentElement.setAttribute("lang", lang);
-}
+/* Safe storage: falls back to memory when localStorage is unavailable
+   (sandboxed preview iframes, some private-browsing modes). */
+const mem = {};
+export const storage = {
+  get(key) { try { return localStorage.getItem(key) ?? mem[key] ?? null; } catch { return mem[key] ?? null; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch { mem[key] = value; } },
+};
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(undefined); // undefined = checking
-  const [lang, setLangState] = useState(detectLang());
-  const [settings, setSettings] = useState(null);
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [locale, setLocale] = useState(() => {
+    const saved = storage.get("wassilha_locale");
+    return saved && LOCALES[saved] ? saved : "ar";
+  });
+  const [toasts, setToasts] = useState([]);
 
-  useEffect(() => { applyDir(lang); }, [lang]);
+  const t = useMemo(() => makeT(locale), [locale]);
 
-  const t = useCallback((key) => translations[lang]?.[key] ?? translations.en[key] ?? key, [lang]);
-
-  const setLang = useCallback((l) => {
-    setLangState(l);
-    localStorage.setItem("wassilha_lang", l);
-    applyDir(l);
-    api.put("/settings", { language: l }).catch(() => {});
+  // restore session on load
+  useEffect(() => {
+    api.get("/auth/me")
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setAuthChecked(true));
   }, []);
 
-  const refreshSettings = useCallback(async () => {
-    try {
-      const { data } = await api.get("/settings");
-      setSettings(data);
-      return data;
-    } catch { return null; }
+  // apply locale to <html>
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = localeDir(locale);
+    storage.set("wassilha_locale", locale);
+  }, [locale]);
+
+  const toast = useCallback((message, kind = "info") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((ts) => [...ts, { id, message, kind }]);
+    setTimeout(() => setToasts((ts) => ts.filter((x) => x.id !== id)), 4200);
   }, []);
 
-  const bootstrap = useCallback(async () => {
+  // translate API errors: {code: "detail_code"} -> human message
+  const tError = useCallback(
+    (err) => {
+      if (!err) return t("err_unknown");
+      if (err.code === "network") return t("err_network");
+      if (typeof err.code === "string" && err.code.startsWith("err_")) return t(err.code);
+      const key = "err_" + String(err.code);
+      const translated = t(key);
+      if (translated !== key) return translated;
+      if (err.status === 422) return t("err_invalid_datetime");
+      if (err.status === 429) return t("err_rate_limited");
+      if (err.status === 401) return t("err_not_authenticated");
+      return t("err_unknown");
+    },
+    [t],
+  );
+
+  const login = useCallback(async (email, password) => {
+    const data = await api.post("/auth/login", { email, password });
+    setUser(data.user);
+    if (data.user?.locale && LOCALES[data.user.locale]) setLocale(data.user.locale);
+    return data.user;
+  }, []);
+
+  const register = useCallback(async (payload) => {
+    const data = await api.post("/auth/register", payload);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
+  const logout = useCallback(async () => {
     try {
-      const { data } = await api.get("/auth/me");
-      setUser(data);
-      await refreshSettings();
-    } catch {
-      setUser(null);
-    }
-  }, [refreshSettings]);
-
-  useEffect(() => { bootstrap(); }, [bootstrap]);
-
-  const login = async (identifier, password) => {
-    const { data } = await api.post("/auth/login", { identifier, password });
-    setUser(data);
-    await refreshSettings();
-    return data;
-  };
-
-  const register = async (name, email, phone, password) => {
-    const { data } = await api.post("/auth/register", { name, email: email || null, phone: phone || null, password });
-    setUser(data);
-    await refreshSettings();
-    return data;
-  };
-
-  const logout = async () => {
-    try { await api.post("/auth/logout"); } catch {}
+      await api.post("/auth/logout", {});
+    } catch { /* ignore */ }
     setUser(null);
-    setSettings(null);
-  };
-
-  const currency = settings?.currency || "USD";
+  }, []);
 
   const value = {
-    user, setUser, lang, setLang, t, settings, setSettings,
-    refreshSettings, login, register, logout, currency, apiError,
+    user, authChecked, locale, setLocale, t, tError, toast, toasts,
+    login, register, logout, setUser,
   };
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
 
-export function AppProviders({ children }) {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AppProvider>{children}</AppProvider>
-    </ThemeProvider>
-  );
+export function useApp() {
+  const ctx = useContext(AppCtx);
+  if (!ctx) throw new Error("useApp must be used inside AppProvider");
+  return ctx;
 }

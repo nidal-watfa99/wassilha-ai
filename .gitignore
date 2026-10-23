@@ -1,6 +1,16 @@
-node_modules/
-.env
-build/
+# Python
 __pycache__/
 *.pyc
+.venv/
+backend/data/
+backend/.env
+
+# Node
+node_modules/
+frontend/dist/
+backend/static/
+
+# Misc
 .DS_Store
+*.log
+.pytest_cache/

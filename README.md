@@ -1,91 +1,119 @@
-# WASSILHA — Business Management Platform
+# وسيلة AI — Wassilha AI
 
-**WASSILHA** (وسيلة) is a modern, bilingual (Arabic RTL / English LTR) business management platform for small and medium businesses, shops, freelancers, contractors and service providers.
+> **GitHub Pages:** the repository publishes automatically in a browser-only *local mode*
+> (no server needed). See [docs/GITHUB_PAGES.md](docs/GITHUB_PAGES.md).
 
-> Simple, intelligent business management — Customers → Products/Services → Quotes → Orders → Invoices → Payments → Tasks → Communication → Insights.
+منصة أعمال متكاملة (Full-Stack) تجمع في تطبيق واحد: جهات الاتصال، المراسلة الفورية مع المكالمات الصوتية والمرئية (WebRTC)، المهام والتقويم، المستندات، المساعد الذكي، الإحصاءات، إدارة المنتجات والمدفوعات، والآلة الحاسبة التجارية.
 
-Developer: **Nidal Watfa** · nidalwatfa99@gmail.com · 00963998854450
+الواجهة مبنية بـ **React 18 + Vite**، والخادم بـ **FastAPI (Python)**، مع قاعدة بيانات **SQLite** عبر SQLAlchemy، ومصادقة بجلسات **Cookie + JWT**، وحماية **CSRF**، وتقييد معدل الطلبات، واختبارات مؤتمتة.
 
 ---
 
-## Features
+## المتطلبات
 
-- **Dashboard** — sales overview, outstanding payments, open orders, recent activity, upcoming tasks, quick actions, AI shortcut.
-- **Customers** — full CRUD, search, activity history (orders/quotes/invoices/payments), map coordinates.
-- **Products & Services** — supports both physical products and services.
-- **Quotes → Orders → Invoices → Payments** — one-click quote-to-order and order-to-invoice conversion; payments auto-update invoice status (partially paid / paid).
-- **Tasks** — priorities, statuses, due dates, quick complete.
-- **Calendar** — month view with events and task due-dates.
-- **Inbox** — lightweight business conversations.
-- **Map** — interactive Leaflet / OpenStreetMap with theme-aware tiles and customer markers.
-- **Insights** — top products and top customers, sales analytics.
-- **Scientific Calculator** — fully local (no network / no AI), with history.
-- **AI Assistant** — professional business assistant (Grok/OpenAI/Anthropic/Gemini via a replaceable server-side provider). Answers from real data, never fabricates, and proposes confirmable actions. The app works fully even if AI is unavailable.
-- **Settings** — business info, multi-currency, Light/Dark/System theme, language, AI provider/model, data export/import.
-- **Bilingual** — automatic device-language detection, Modern Standard Arabic, full RTL/LTR.
-- **Security** — JWT auth via httpOnly cookies, per-owner data isolation, input validation, AI rate limiting, no secrets in the frontend.
+- Python 3.11 أو أحدث
+- Node.js 18 أو أحدث (لبناء الواجهة فقط)
 
-## Tech Stack
+## التشغيل السريع (نمط التطوير)
 
-- **Frontend:** React 19, React Router, Tailwind CSS, shadcn/ui, Recharts, Leaflet, next-themes.
-- **Backend:** FastAPI, Motor (MongoDB), PyJWT, bcrypt, emergentintegrations (LLM).
-- **Database:** MongoDB.
+```bash
+# 1) الخادم
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env          # عدّل القيم كما تشاء (اختياري في التطوير)
+.venv/bin/uvicorn server:app --port 8000
 
-## Project Structure
-
-```
-/app
-├── backend/            # FastAPI app
-│   ├── server.py       # main API (all business modules)
-│   ├── auth.py         # JWT auth (login/register/me/logout/refresh)
-│   ├── ai_service.py   # replaceable LLM provider
-│   ├── database.py     # Mongo client
-│   ├── requirements.txt
-│   └── .env.example
-└── frontend/           # React app
-    ├── src/
-    │   ├── pages/       # all screens
-    │   ├── components/  # Layout, Calculator, AIAssistant, DocumentEditor, common
-    │   ├── context/     # AppContext (auth, language, settings)
-    │   ├── i18n/        # en/ar translations
-    │   └── lib/         # api client, formatters
-    └── .env.example
+# 2) الواجهة (نافذة أخرى)
+cd frontend
+npm install
+npm run dev                    # http://localhost:5173 (وكيل /api و /ws إلى 8000)
 ```
 
-## Getting Started
+## التشغيل بنمط الإنتاج (أصل واحد)
 
-### Backend
+```bash
+cd frontend && npm install && npm run build
+rm -rf ../backend/static && cp -r dist ../backend/static
+cd ../backend
+.venv/bin/uvicorn server:app --host 0.0.0.0 --port 8000
+# افتح http://IP:8000 — الخادم يقدّم الواجهة والـ API من نفس الأصل
+```
+
+> تنبيه أمني: في الإنتاج اضبط `WASSILHA_ENV=production` ومتغير `JWT_SECRET` (مثال: `openssl rand -hex 32`)، و`COOKIE_SECURE=true` خلف HTTPS. بدون `JWT_SECRET` في وضع الإنتاج سيرفض الخادم الإقلاع عمداً.
+
+## التشغيل على هاتف أندرويد (Termux)
+
+```bash
+pkg update && pkg install python nodejs git unzip
+unzip wassilha-ai.zip && cd wassilha-ai/backend
+
+# 1) جهّز الخادم
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# 2) ابنِ الواجهة (قبل تشغيل الخادم — الخادم يقدّمها من backend/static)
+cd ../frontend && npm install && npm run build
+rm -rf ../backend/static && cp -r dist ../backend/static
+
+# 3) شغّل الخادم (من مجلد backend)
+cd ../backend && .venv/bin/uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+ثم افتح `http://localhost:8000` من متصفح الهاتف. لجلسات طويلة نفّذ `termux-wake-lock` لمنع أندرويد من إيقاف العملية.
+
+## الاختبارات
+
 ```bash
 cd backend
-cp .env.example .env          # fill in JWT_SECRET, admin creds, EMERGENT_LLM_KEY
-pip install -r requirements.txt
-uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+.venv/bin/python -m pytest tests/ -q -p no:cacheprovider
 ```
 
-### Frontend
-```bash
-cd frontend
-cp .env.example .env          # set REACT_APP_BACKEND_URL
-yarn install
-yarn start
+## هيكل المشروع
+
+```
+wassilha-ai/
+├── README.md / QA_REPORT.md
+├── docs/            # ARCHITECTURE / DEPLOYMENT / API / DESIGN_SYSTEM
+├── backend/
+│   ├── server.py    # تطبيق FastAPI: CORS، CSRF، تقديم الواجهة، الفحوص
+│   ├── config.py    # الإعدادات عبر متغيرات البيئة
+│   ├── models/      # SQLAlchemy: المستخدمون، المحادثات، المهام، الملفات...
+│   ├── services/     # الأمان، الملفات، الذكاء الاصطناعي، الزمن الحقيقي
+│   ├── routes/       # auth, contacts, tasks, messaging, ai, commerce, insights, meta, ws
+│   ├── tests/       # pytest (32 اختباراً)
+│   └── .env.example
+└── frontend/
+    ├── src/pages/   # 13 صفحة (دعم كامل للعربية RTL والإنجليزية والإسبانية)
+    ├── src/context/ # الجلسة، الزمن الحقيقي (WebSocket)، المكالمات (WebRTC)
+    ├── src/i18n/    # قواميس ar / en / es
+    └── src/styles/design-system.css  # نظام التصميم المستخرج من الموقع المرجعي
 ```
 
-An admin/owner account is auto-seeded on first backend start from `ADMIN_EMAIL` / `ADMIN_PASSWORD`, with demo data.
+## الميزات الرئيسية
 
-## API Overview
+- **الحسابات**: تسجيل/دخول/خروج مع Argon2 وJWT مع إبطال فعّال (RevokedToken)، وتغيير كلمة المرور والملف الشخصي.
+- **جهات الاتصال**: CRUD كامل مع بحث وتفاصيل وسجل محادثات.
+- **المراسلة**: محادثات فردية/جماعية، رسائل فورية عبر WebSocket مع حالة تسليم/قراءة، مرفقات ملفات مع تقدم رفع، رسائل صوتية (MediaRecorder)، ورسائل مؤقتة مع إعادة محاولة ذكية (client_key لمنع التكرار).
+- **المكالمات**: صوتية ومرئية عبر WebRTC مع إشارات عبر WebSocket (تحقق من أطراف المكالمة)، وSTUN/TURN قابل للضبط.
+- **المهام والتقويم**: مهام بأولويات وحالات ومواعيد، وأحداث شهرية.
+- **المستندات**: محرر نصوص مع مؤشر تغييرات غير محفوظة، تحذير قبل المغادرة أو إعادة التحميل، وحفظ يدوي مع حالات واضحة.
+- **المساعد الذكي**: محول متوافق مع OpenAI — إذا لم يُضبط مفتاح API يعرض حالة "غير مهيأ" بصراحة (بدون أي تزييف).
+- **الإحصاءات**: لوحة مؤشرات ورسوم CSS خالصة من بيانات حقيقية.
+- **التجارة**: منتجات ومدفوعات (تسجيل ومعالجة حالة — بلا دفع وهمي).
+- **الآلة الحاسبة**: محلل تعبيرات رياضي آمن (Shunting-yard، بدون eval).
+- **الأمان**: CSRF على كل الطفرات، تحقق من ملكية كل مورد، تحقق MIME + بصمة الملف، فحص أصل WebSocket، تقييد معدل الطلبات، وفحص سر الإنتاج.
 
-All routes are prefixed with `/api`. Auth uses httpOnly cookies (with Bearer fallback).
+## الوثائق التفصيلية
 
-- `POST /api/auth/register|login|logout|refresh`, `GET /api/auth/me`
-- `GET/POST/PUT/DELETE /api/customers|products|tasks|events`
-- `GET/POST/PUT/DELETE /api/quotes|orders|invoices` (+ `PATCH /{id}/status`)
-- `POST /api/quotes/{id}/convert`, `POST /api/orders/{id}/invoice`
-- `GET/POST/DELETE /api/payments`
-- `GET/POST /api/conversations`, `POST /api/conversations/{id}/messages`
-- `GET /api/dashboard`, `GET /api/insights`, `GET/PUT /api/settings`
-- `POST /api/ai/chat`, `GET /api/ai/status`
-- `GET /api/export`, `POST /api/import`, `POST /api/feedback`
+- `docs/ARCHITECTURE.md` — البنية والمكونات وتدفق البيانات
+- `docs/API.md` — مرجع كامل لواجهات REST وWebSocket
+- `docs/DEPLOYMENT.md` — النشر على VPS / Termux / Docker
+- `docs/DESIGN_SYSTEM.md` — نظام التصميم المستخرج من الموقع المرجعي
+- `QA_REPORT.md` — تقرير الجودة الكامل بالنتائج الفعلية
 
-## License
+## حدود معروفة (صدقاً ودون تزييف)
 
-© WASSILHA — Nidal Watfa.
+1. تدفق استعادة كلمة المرور غير منفّذ (يتطلب خدمة بريد).
+2. الوسائط عبر الشبكات المختلفة تحتاج TURN مُهيأ — لم يُختبر بين شبكتين حقيقيتين.
+3. مزود الذكاء الاصطناعي يحتاج مفتاح API حقيقياً — الحالة غير المهيأة تظهر صراحة للمستخدم.
+4. تسجيل الصوت والمكالمات الفعلية تحتاج أجهزة حقيقية بميكروفون/كاميرا.

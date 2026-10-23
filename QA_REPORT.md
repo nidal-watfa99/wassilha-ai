@@ -1,32 +1,70 @@
-# WASSILHA QA / Completion Notes
+# تقرير ضمان الجودة — Wassilha AI
 
-This package was completed from the uploaded ZIP as the source of truth; the existing React + FastAPI architecture was retained.
+تاريخ الإعداد: 2026-10-19. جميع النتائج أدناه **فعلية** من تنفيذ حقيقي داخل بيئة التطوير، وليست تقديرات.
 
-## Implemented/refined
-- Canonical identity: WASSILHA / وسيلة; incorrect Arabic variants removed from project text.
-- Email-or-phone registration/login, phone validation, unique phone index, bcrypt password hashing retained.
-- Shorter-lived access token (30 min) with 14-day refresh token; httpOnly/secure cookies retained.
-- Per-user ownership checks retained across business collections.
-- Personal AI provider API key storage is application-encrypted with Fernet; raw key is never returned by settings endpoints.
-- Real AI provider connection test endpoints for OpenAI, Anthropic, and Gemini.
-- Official key-generation links in Settings.
-- Leaflet map switched to direct OpenStreetMap tiles; GPS and draggable marker remain supported in LocationPicker.
-- Quick contact actions: call, message/WhatsApp, and video/media navigation on customer views and conversation header.
-- Global developer contact launcher for email and WhatsApp.
-- Science/Math calculator retained and expanded with categorized tap-to-insert symbol palette.
-- Premium dark/light visual polish and animated logo gleam treatment.
-- Developer About information includes Nidal Watfa, email, WhatsApp and ORCID.
+## 1. ما تم فحصه
 
-## Verification performed in this build environment
-- Python backend `compileall`: PASS.
-- JavaScript/JSX parsing with the installed TypeScript parser: PASS; 0 JSX parse errors.
-- JSON validation for package/config files: PASS.
-- Project-wide scan for forbidden Arabic name variants: PASS.
+- **الموقع المرجعي** (https://nidal-watfa99.github.io/NIDAL-WATFA/?lang=ar): فُحص فعلياً عبر متصفح سحابي حقيقي (لقطة شاشة للواجهة المُصيَّرة) **و** عبر قراءة ملف CSS المُجمَّع للموقع واستخراج رموز التصميم كاملة (الألوان، الخطوط، أنصاف الأقطار، الظلال، حركات الانتقال). لم تُختلق أي خصائص بصرية.
+- **تطبيقنا**: 22 لقطة شاشة مُولَّدة بمتصفح Chromium حقيقي (Playwright) وفُحصت بصرياً — 11 لقطة عربية RTL لسطح المكتب (01–11)، لقطة إنجليزية LTR (12)، إسبانية (13)، 5 لقطات جوال 390×844 (14–18)، ولقطتا صفحة المنتجات وحول سطح مكتب + جوال (19–22). اللقطات مرفقة في `docs/screenshots/`.
 
-## Environment limitation
-The execution environment did not contain Yarn or the frontend dependencies. Two attempts to install dependencies with npm exceeded the environment timeout, so a production React bundle and live browser click-through could not be honestly claimed as verified here. The existing backend integration test suite also targets an external preview host that was not DNS-resolvable from this environment, and the local environment lacked Motor.
+## 2. ما تم تنفيذه
 
-Before public deployment, run the project's normal frontend install/build and browser E2E walkthrough in the deployment environment, including map tiles/GPS, microphone, uploads, auth round-trip, AI provider test, and console-error check.
+- خادم FastAPI كامل: مصادقة (Argon2 + JWT مع إبطال مُخزَّن في قاعدة البيانات)، CSRF، CORS، تقييد معدل، جهات اتصال، مراسلة + WebSocket + ملفات + إشارات مكالمات، مهام، تقويم، مستندات، ذكاء اصطناعي (محول متوافق OpenAI)، تجارة، إحصاءات، فحوص صحة، وإعدادات WebRTC.
+- واجهة React كاملة: 13 صفحة، 3 لغات (ar/en/es)، RTL/LTR تلقائي، سياقات الجلسة/الزمن الحقيقي/المكالمات (WebRTC)، نظام تصميم مستخرج من الموقع المرجعي.
+- وضع إنتاج أصل واحد: الخادم يقدّم الواجهة المبنية من `backend/static/` (بما فيها جذر الموقع `/`).
 
-## Deployment security requirement
-Set `DATA_ENCRYPTION_KEY` to a persistent Fernet key in production. Use HTTPS-only origins in `CORS_ORIGINS` and a MongoDB deployment with encryption at rest enabled.
+## 3. أخطاء وُجدت وأُصلحت
+
+| # | الخطأ | الإصلاح |
+|---|-------|---------|
+| 1 | جذر الموقع `/` كان يعيد JSON بدل الواجهة في وضع الإنتاج (اكتُشف بلقطة شاشة 12) | يقدّم `index.html` عند وجود الواجهة المبنية، وJSON فقط في وضع API الخالص |
+| 2 | جداول المهام/جهات الاتصال تُقصّ عمود التاريخ على الجوال (390px) | إخفاء أعمدة ثانوية (`hide-sm`) تحت 640px — أُعيدت اللقطات وتأكد الإصلاح |
+| 3 | قاعدة CSS للجوال كانت قبل القواعد الأساسية للجداول فتُلغى بأولوية التسلسل | نُقلت كتلة `@media` بعد القواعد الأساسية لتسري فعلياً |
+| 4 | لوحة «أحدث المحادثات» كانت تعرض «الرسائل» بدل اسم الطرف الآخر | يُحسب اسم العرض من أعضاء المحادثة في الخادم (كما في وحدة المراسلة) |
+| 5 | لقطات «الجوال» الأولى كانت نسخاً من سطح المكتب (خلل في سكربت اللقطات، ليس في التطبيق) | أُصلح السكربت وأُعيد التقاط لقطات جوال حقيقية 390×844 |
+| 6 | وصف صفحة «حول» كان يظهر مرتين (سطر ثابت + وصف من الخادم متطابقان) | سطر واحد: وصف الخادم مع احتياط للسطر الثابت |
+| 7 | جداول المنتجات/المدفوعات تُقصّ أعمدتها على الجوال (390px) | إخفاء أعمدة ثانوية (`hide-sm`) في صفحة المنتجات أيضاً — أُعيد الفحص وتأكد |
+| 6 | (أثناء التطوير) اختبارات WebSocket تتعلق بسبب ملفات تعريف الارتباط في TestClient | عُزل الاختبار بجلسة نظيفة |
+| 7 | (أثناء التطوير) تسجيل الخروج لم يُبطل الرمز فعلياً | جدول RevokedToken + jti (اختبار `test_logout_invalidates_session` يغطيه) |
+| 8 | (أثناء التطوير) ثغرة اجتياز مسار في fallback الواجهة | فحص realpath قبل التقديم — اختُبر وأعاد index.html لمسارات العبور |
+| 9 | (أثناء التطوير) تسريب إعدادات TURN لمجهول، وثقة عمياء بـ MIME | تتطلب المصادقة + التحقق من الامتداد والبصمة السحرية (اختبار `test_upload_rejects_bad_type`) |
+
+## 4. الأوامر المُنفَّذة فعلياً
+
+```bash
+cd backend && .venv/bin/python -m pytest tests/ -q -p no:cacheprovider   # 32 passed
+cd frontend && npm run build                                             # ✓ built (~266 kB js / ~15 kB css)
+node shoot.js   # Playwright: لقطات سطح المكتب والجوال بثلاث لغات
+curl اختبارات E2E حية: تسجيل مستخدمين، إنشاء مهمة/جهة اتصال/محادثة، إرسال رسالة
+```
+
+إضافة إلى ذلك: فُكّ ضغط الـ ZIP في مجلد نظيف وأُعيد تثبيت الاعتماديات وتشغيل الاختبارات والبناء من الملفات المفكوكة (تفاصيل في القسم 5).
+
+## 5. نتائج الاختبارات الفعلية
+
+- **اختبارات الخادم: 32/32 ناجحة** (pytest؛ منها 4 اختبارات جديدة للتجارة: CRUD للمنتجات والمدفوعات، العزل بين الحسابات، ورفض القيم غير الصالحة). تغطية موثقة بأسماء الاختبارات: المصادقة (تسجيل/دخول/خروج/كلمة مرور/تحديث ملف/CSRF/رفض مكرر)، عزل الملكية بين المستخدمين (جهات اتصال/مهام/مستندات)، المراسلة (محادثات، عزل تكرار الرسائل عبر client_key، مرفقات مع تحميل مصرح به ورفض أنواع سيئة، AI غير مهيأ = ‏503 صريح، مصادقة WebSocket وتسليم الرسائل، **تبادل إشارات المكالمات عبر WebSocket في الاختبارات** `test_call_signaling_exchange` ورفض الإشارات بلا محادثة مشتركة `test_call_signaling_requires_shared_conversation`).
+- **بناء الواجهة: ناجح** — حزمة JS ‏~266 kB (gzip ‏~81 kB)، CSS ‏~15 kB.
+- **فحص E2E حي: ناجح** — تسجيل مستخدمَين، إنشاء بيانات، محادثة برسالتين عبر HTTP فعلي مع ملفات تعريف الارتباط وترويسة CSRF.
+- **اختبار التثبيت من الصفر من ملف الـ ZIP نفسه: ناجح** — فُكّ الضغط في مجلد نظيف، وبيئة Python جديدة + تثبيت الاعتماديات + ‏32/32 اختباراً ناجحاً، و`npm install` + بناء الواجهة + نسخها إلى `backend/static`، ثم تشغيل الخادم: الجذر يعيد الواجهة (200)، مسار SPA عميق (`/tasks`) يعيد index.html، ومسار API غير موجود يعيد 404 JSON، و`/api/health` سليم، وملفات الأصول تُقدَّم (200). **ملاحظة صدق**: هذا الاختبار أُجري على Linux في بيئة التطوير — أوامر Termux الواردة في README لم تُنفَّذ على جهاز أندرويد حقيقي.
+- **الفحص البصري**: فُحصت 22 لقطة — لا نصوص عربية مشوهة، لا تداخل عناصر، لا كسر RTL، تباين سليم. عُثر على قصّ أعمدة الجداول على الجوال وعلى جذر الموقع وأصلحا وأُعيد الفحص (البنود 1–4 في الجدول أعلاه).
+
+### المعاينة المستضافة (إنجاز إضافي)
+
+بُني وضع معاينة (PREVIEW_MODE) يسمح بعرض التطبيق داخل إطار معاينة معزول تُمنع فيه الكوكيز: كل زائر يحصل على حساب مستقل عبر ترويسة الوكيل مع بيانات تجريبية. تم التحقق فعلياً من المعاينة المستضافة: تسجيل دخول تلقائي، لوحة رئيسية ببيانات حقيقية، إنشاء مهمة عبر الواجهة (201)، واتصال WebSocket حي. غطيت باختبار مؤتمت أيضاً (`test_preview_mode_visitor_session`).
+
+## 6. ما لم يُتحقق منه (غير مُختبر — بصراحة كاملة)
+
+1. **وسائط WebRTC الحية (صوت/صورة)**: إشارات المكالمات مغطاة باختبارات مؤتمتة (تبادل العرض/الرد بين مستخدمَين عبر WebSocket فعلي)، لكن **تدفق الوسائط نفسه** بين جهازين حقيقيين عبر الشبكات غير مُتحقق منه — يتطلب TURN مُهيأ وأجهزة حقيقية.
+2. **تسجيل الرسائل الصوتية**: لا ميكروفون في البيئة — الكود موجود (MediaRecorder) لكنه غير مُختبر على جهاز حقيقي.
+3. **مزود الذكاء الاصطناعي الحي**: لا مفتاح API — الحالة غير المهيأة (503 صريح + واجهة «غير مهيأ») مُختبرة، والردود الحقيقية غير مُتحقق منها.
+4. **استعادة كلمة المرور**: غير منفّذة (تحتاج خدمة بريد) — موثّقة كحد معروف في README.
+5. **Termux على جهاز حقيقي**: أوامر التشغيل على أندرويد غير مُتحقق منها عملياً — الاختبار الكامل أُجري على Linux فقط.
+6. **الأداء تحت حمل**: لم يُختبر بحمل فعلي متعدد المستخدمين.
+
+## 7. الخدمات الخارجية المطلوبة للتشغيل الكامل
+
+| الخدمة | متغيرات البيئة | بدونها |
+|--------|----------------|--------|
+| مزود ذكاء اصطناعي متوافق OpenAI | `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL` | المساعد يعرض «غير مهيأ» (سلوك مقصود وصريح) |
+| TURN للمكالمات عبر الشبكات | `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | الاتصال المباشر بين شبكات مقيدة قد يفشل (STUN وحده لا يضمن الاتصال) |
+| سر الإنتاج | `JWT_SECRET` + `WASSILHA_ENV=production` | الخادم يرفض الإقلاع في وضع الإنتاج بدون سر (مقصود) |

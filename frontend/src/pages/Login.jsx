@@ -1,79 +1,82 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useApp } from "@/context/AppContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { Loader2, Globe } from "lucide-react";
-import { apiError } from "@/lib/api";
+import React, { useState } from "react";
+import { useApp, storage } from "../context/AppContext";
+import { ErrorNote } from "../components/UI";
+import { LangSwitch } from "../components/Layout";
+import { IconSpark } from "../components/Icons";
 
-function AuthShell({ children }) {
-  const { t, lang, setLang } = useApp();
+export default function Login() {
+  const { t, tError, login, register, toast } = useApp();
+  const [mode, setMode] = useState("login");
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      if (mode === "login") {
+        await login(form.email, form.password);
+      } else {
+        await register({
+          name: form.name, email: form.email, password: form.password,
+          locale: storage.get("wassilha_locale") || "ar",
+        });
+      }
+    } catch (err) {
+      setError(err);
+      toast(tError(err), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      <div className="hidden lg:flex flex-col justify-between p-10 bg-primary text-primary-foreground relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-        <div className="relative flex items-center gap-3">
-          <img src="/logo.png" alt="" className="h-11 w-11 rounded-xl bg-white/90 p-1" />
-          <span className="text-2xl font-bold head-font">{t("app_name")}</span>
+    <div className="app-shell" style={{ alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+      <div className="glass card" style={{ width: "min(94vw, 420px)", padding: "2rem 1.8rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", marginBottom: "1.4rem", textAlign: "center" }}>
+          <div className="brand-orb" style={{ width: 52, height: 52 }} aria-hidden="true">و</div>
+          <h1 className="silver-blue-text" style={{ margin: 0, fontSize: "1.5rem" }}>{t("appName")}</h1>
+          <p style={{ margin: 0, color: "var(--text-2)", fontSize: "var(--text-sm)" }}>{mode === "login" ? t("welcome") : t("getStarted")}</p>
         </div>
-        <div className="relative">
-          <h2 className="text-4xl font-bold head-font leading-tight mb-4">{t("welcome")}</h2>
-          <p className="text-primary-foreground/80 text-lg max-w-md">{t("tagline")}</p>
+
+        <form onSubmit={submit}>
+          {mode === "register" && (
+            <div className="field">
+              <label htmlFor="name">{t("name")}</label>
+              <input id="name" className="input" required minLength={2} maxLength={100}
+                     value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                     autoComplete="name" />
+            </div>
+          )}
+          <div className="field">
+            <label htmlFor="email">{t("email")}</label>
+            <input id="email" className="input" type="email" required
+                   value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+                   autoComplete="email" dir="ltr" style={{ textAlign: "start" }} />
+          </div>
+          <div className="field">
+            <label htmlFor="password">{t("password")}</label>
+            <input id="password" className="input" type="password" required minLength={8}
+                   value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
+                   autoComplete={mode === "login" ? "current-password" : "new-password"} dir="ltr" style={{ textAlign: "start" }} />
+          </div>
+          <ErrorNote error={error} />
+          <button className="btn btn-primary" style={{ width: "100%" }} disabled={busy}>
+            {busy ? t("loading") : mode === "login" ? t("login") : t("register")}
+          </button>
+        </form>
+
+        <p style={{ textAlign: "center", marginTop: "1.1rem", marginBottom: 0, fontSize: "var(--text-sm)" }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(null); }}>
+            {mode === "login" ? t("noAccount") + " " + t("register") : t("haveAccount") + " " + t("login")}
+          </button>
+        </p>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+          <LangSwitch />
         </div>
-        <div className="relative text-sm text-primary-foreground/60">© WASSILHA — Nidal Watfa</div>
-      </div>
-      <div className="flex flex-col items-center justify-center p-6 relative">
-        <button onClick={() => setLang(lang === "ar" ? "en" : "ar")} className="absolute top-5 end-5 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground" data-testid="auth-lang-toggle">
-          <Globe className="h-4 w-4" />{lang === "ar" ? "English" : "العربية"}
-        </button>
-        <div className="w-full max-w-sm">{children}</div>
       </div>
     </div>
   );
 }
-
-export default function Login() {
-  const { t, login } = useApp();
-  const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await login(identifier, password);
-      navigate("/");
-    } catch (err) {
-      toast.error(apiError(err));
-    } finally { setLoading(false); }
-  };
-
-  return (
-    <AuthShell>
-      <h1 className="text-2xl font-bold head-font mb-1">{t("login")}</h1>
-      <p className="text-muted-foreground text-sm mb-6">{t("sign_in_desc")}</p>
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <Label htmlFor="identifier">{t("email_or_phone")}</Label>
-          <Input id="identifier" type="text" inputMode="email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required data-testid="login-identifier" className="mt-1.5 h-11" autoComplete="username" placeholder="name@example.com or +963..." />
-        </div>
-        <div>
-          <Label htmlFor="password">{t("password")}</Label>
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required data-testid="login-password" className="mt-1.5 h-11" autoComplete="current-password" />
-        </div>
-        <Button type="submit" disabled={loading} className="w-full h-11" data-testid="login-submit">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("login")}
-        </Button>
-      </form>
-      <p className="text-sm text-muted-foreground mt-6 text-center">
-        {t("no_account")} <Link to="/register" className="text-primary font-medium" data-testid="goto-register">{t("register")}</Link>
-      </p>
-    </AuthShell>
-  );
-}
-
-export { AuthShell };

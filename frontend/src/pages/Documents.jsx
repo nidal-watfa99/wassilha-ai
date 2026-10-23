@@ -1,110 +1,154 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useApp } from "@/context/AppContext";
-import api, { apiError } from "@/lib/api";
-import { toast } from "sonner";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PageHeader, EmptyState, StatusBadge, Money, ListSkeleton, useConfirm } from "@/components/common";
-import DocumentEditor from "@/components/DocumentEditor";
-import { formatDate } from "@/lib/format";
-import { FileText, ShoppingCart, Receipt, Plus, Search, MoreVertical, Eye, Pencil, Trash2, ArrowRightLeft, Printer, Send } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { api } from "../services/api";
+import { useApp } from "../context/AppContext";
+import { EmptyState, Spinner, ConfirmDialog } from "../components/UI";
+import { IconDoc, IconPlus, IconTrash, IconEdit } from "../components/Icons";
+import { formatDateTime } from "../i18n";
 
-const META = {
-  quotes: { icon: FileText, statuses: ["all", "draft", "sent", "accepted", "rejected", "expired"] },
-  orders: { icon: ShoppingCart, statuses: ["all", "new", "confirmed", "processing", "ready", "delivered", "cancelled"] },
-  invoices: { icon: Receipt, statuses: ["all", "draft", "sent", "pending", "partially_paid", "paid", "overdue", "cancelled"] },
-};
-
-export default function Documents({ type }) {
-  const { t, lang } = useApp();
-  const navigate = useNavigate();
-  const confirm = useConfirm();
+export default function Documents() {
+  const { t, locale, toast, tError } = useApp();
+  const [params, setParams] = useSearchParams();
   const [items, setItems] = useState(null);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [editor, setEditor] = useState({ open: false, doc: null });
-  const meta = META[type];
+  const [openId, setOpenId] = useState(params.get("d") || null);
+  const [doc, setDoc] = useState(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const leaveToRef = useRef(null);
 
-  const load = useCallback(() => {
-    api.get(`/${type}`, { params: { search: search || undefined, status } })
-      .then((r) => setItems(r.data)).catch(() => setItems([]));
-  }, [type, search, status]);
+  const loadList = useCallback(() => {
+    api.get("/documents").then((d) => setItems(d.items)).catch((e) => toast(tError(e), "error"));
+  }, [toast, tError]);
+  useEffect(() => { loadList(); }, [loadList]);
 
-  useEffect(() => { setItems(null); const id = setTimeout(load, 250); return () => clearTimeout(id); }, [load]);
+  // load the open document
+  useEffect(() => {
+    if (!openId) { setDoc(null); return; }
+    api.get(`/documents/${openId}`)
+      .then((d) => { setDoc(d); setTitle(d.title); setContent(d.content); setDirty(false); })
+      .catch((e) => { toast(tError(e), "error"); setOpenId(null); });
+  }, [openId, toast, tError]);
 
-  const del = async (doc) => {
-    if (!(await confirm({ title: t("delete"), danger: true, confirmText: t("delete") }))) return;
-    try { await api.delete(`/${type}/${doc.id}`); toast.success(t("deleted")); load(); }
-    catch (e) { toast.error(apiError(e)); }
-  };
-  const convert = async (doc) => {
-    try { const { data } = await api.post(`/quotes/${doc.id}/convert`); toast.success(t("created")); navigate("/view/orders/" + data.id); }
-    catch (e) { toast.error(apiError(e)); }
-  };
-  const makeInvoice = async (doc) => {
-    try { const { data } = await api.post(`/orders/${doc.id}/invoice`); toast.success(t("created")); navigate("/view/invoices/" + data.id); }
-    catch (e) { toast.error(apiError(e)); }
-  };
-  const quickStatus = async (doc, s) => {
-    try { await api.patch(`/${type}/${doc.id}/status`, { status: s }); toast.success(t("updated")); load(); }
-    catch (e) { toast.error(apiError(e)); }
+  // protect unsaved changes: browser close / reload
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const guard = (fn) => {
+    if (dirty) { leaveToRef.current = fn; setConfirmLeave(true); }
+    else fn();
   };
 
-  const title = t(type);
+  const newDoc = () => guard(async () => {
+    try {
+      const d = await api.post("/documents", { title: t("newDocument"), content: "" });
+      loadList();
+      setOpenId(d.id);
+      setParams({ d: d.id });
+    } catch (e) { toast(tError(e), "error"); }
+  });
+
+  const save = async () => {
+    if (!doc || saving) return;
+    setSaving(true);
+    try {
+      const d = await api.patch(`/documents/${doc.id}`, { title, content });
+      setDoc(d);
+      setDirty(false);
+      loadList();
+      toast(t("saved"), "success");
+    } catch (e) {
+      toast(t("saveFailed") + " — " + tError(e), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    try {
+      await api.del(`/documents/${deleting.id}`);
+      if (openId === deleting.id) { setOpenId(null); setParams({}); }
+      loadList();
+    } catch (e) { toast(tError(e), "error"); }
+  };
+
+  const openDoc = (id) => guard(() => { setOpenId(id); setParams({ d: id }); });
 
   return (
-    <div>
-      <PageHeader title={title} icon={meta.icon}
-        action={<Button onClick={() => setEditor({ open: true, doc: null })} data-testid={`create-${type}-button`}><Plus className="h-4 w-4 me-1" />{t("create")}</Button>} />
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search_placeholder")} className="ps-9" data-testid="doc-search" />
-        </div>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="sm:w-48" data-testid="doc-status-filter"><SelectValue /></SelectTrigger>
-          <SelectContent>{meta.statuses.map((s) => <SelectItem key={s} value={s}>{s === "all" ? t("all") : t(s)}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-
-      {items === null ? <ListSkeleton /> : items.length === 0 ? (
-        <EmptyState icon={meta.icon} title={t(`no_${type}`)} action={<Button onClick={() => setEditor({ open: true, doc: null })}><Plus className="h-4 w-4 me-1" />{t("create")}</Button>} />
-      ) : (
-        <Card className="divide-y divide-border overflow-hidden">
-          {items.map((doc) => (
-            <div key={doc.id} className="flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors" data-testid={`doc-row-${doc.id}`}>
-              <div className="hidden sm:flex h-10 w-10 rounded-xl bg-primary/10 text-primary items-center justify-center shrink-0"><meta.icon className="h-5 w-5" /></div>
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/view/${type}/${doc.id}`)}>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{doc.customer_name || "—"}</span>
-                  <span className="text-xs text-muted-foreground font-mono">{doc.number}</span>
+    <div style={{ display: "grid", gridTemplateColumns: doc ? "280px 1fr" : "1fr", gap: "1rem" }}>
+      {!doc && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <h2 style={{ margin: 0 }}>{t("documents")}</h2>
+            <button className="btn btn-primary btn-sm" onClick={newDoc}><IconPlus />{t("newDocument")}</button>
+          </div>
+          <div className="glass">
+            {items === null ? (
+              <div style={{ display: "grid", placeItems: "center", padding: "2.5rem" }}><Spinner /></div>
+            ) : items.length === 0 ? (
+              <EmptyState icon={<IconDoc />} text={t("noDocuments")}
+                           action={<button className="btn btn-ghost btn-sm" onClick={newDoc}>{t("newDocument")}</button>} />
+            ) : items.map((d) => (
+              <div key={d.id} className="conv-item" style={{ cursor: "default" }}>
+                <div className="avatar"><IconDoc style={{ width: 18, height: 18 }} /></div>
+                <div style={{ flex: 1, minWidth: 0 }} onClick={() => openDoc(d.id)} role="button" tabIndex={0}
+                     onKeyDown={(e) => e.key === "Enter" && openDoc(d.id)}>
+                  <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.title}</div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--text-3)" }}>
+                    {t("lastEdited")}: {formatDateTime(d.updated_at, locale)}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-0.5">{formatDate(doc.date, lang)}</div>
+                <button className="icon-btn" style={{ width: 36, height: 36 }} onClick={() => setDeleting(d)} title={t("delete")}>
+                  <IconTrash style={{ width: 16, height: 16 }} />
+                </button>
               </div>
-              <StatusBadge status={doc.status} />
-              <div className="text-sm font-semibold tabular text-end min-w-[80px]"><Money amount={doc.total} currency={doc.currency} /></div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" data-testid={`doc-menu-${doc.id}`}><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/view/${type}/${doc.id}`)}><Eye className="h-4 w-4 me-2" />{t("view")}</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setEditor({ open: true, doc })}><Pencil className="h-4 w-4 me-2" />{t("edit")}</DropdownMenuItem>
-                  {type === "quotes" && <DropdownMenuItem onClick={() => convert(doc)}><ArrowRightLeft className="h-4 w-4 me-2" />{t("convert_to_order")}</DropdownMenuItem>}
-                  {type === "orders" && <DropdownMenuItem onClick={() => makeInvoice(doc)}><Receipt className="h-4 w-4 me-2" />{t("create_invoice")}</DropdownMenuItem>}
-                  {type === "invoices" && <DropdownMenuItem onClick={() => quickStatus(doc, "sent")}><Send className="h-4 w-4 me-2" />{t("sent")}</DropdownMenuItem>}
-                  <DropdownMenuItem onClick={() => del(doc)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 me-2" />{t("delete")}</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
-        </Card>
+            ))}
+          </div>
+        </div>
       )}
 
-      <DocumentEditor type={type} doc={editor.doc} open={editor.open} onOpenChange={(o) => setEditor((s) => ({ ...s, open: o }))} onSaved={load} />
+      {doc && (
+        <div className="glass card" style={{ display: "flex", flexDirection: "column", gap: "0.8rem", alignSelf: "start", width: "100%" }}>
+          <div style={{ display: "flex", gap: "0.7rem", alignItems: "center", flexWrap: "wrap" }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => guard(() => { setOpenId(null); setParams({}); })}>
+              ‹ {t("documents")}
+            </button>
+            <input className="input" style={{ flex: 1, minWidth: "160px" }} value={title} maxLength={200}
+                   onChange={(e) => { setTitle(e.target.value); setDirty(true); }}
+                   aria-label={t("docTitle")} />
+            {dirty && <span className="badge badge-violet">{t("unsavedChanges")}</span>}
+            <button className="btn btn-primary btn-sm" onClick={save} disabled={!dirty || saving}>
+              {saving ? t("loading") : t("save")}
+            </button>
+          </div>
+          <textarea className="textarea" style={{ minHeight: "55vh", fontFamily: "ui-monospace, monospace", direction: "ltr", textAlign: "start" }}
+                    value={content} onChange={(e) => { setContent(e.target.value); setDirty(true); }}
+                    aria-label={t("docContent")} spellCheck={false} />
+          <div style={{ fontSize: "var(--text-xs)", color: "var(--text-3)", display: "flex", justifyContent: "space-between" }}>
+            <span>{t("lastEdited")}: {formatDateTime(doc.updated_at, locale)}</span>
+            <span>{content.length} chars</span>
+          </div>
+        </div>
+      )}
+
+      {deleting && (
+        <ConfirmDialog title={t("confirmDelete")} message={`${t("confirmDelete")} (${deleting.title})`}
+                       onConfirm={remove} onClose={() => setDeleting(null)} />
+      )}
+
+      {confirmLeave && (
+        <ConfirmDialog title={t("unsavedChanges")} message={t("unsavedWarning")} danger={false}
+                       confirmLabel={t("yes")}
+                       onConfirm={() => { setConfirmLeave(false); leaveToRef.current?.(); }}
+                       onClose={() => setConfirmLeave(false)} />
+      )}
     </div>
   );
 }

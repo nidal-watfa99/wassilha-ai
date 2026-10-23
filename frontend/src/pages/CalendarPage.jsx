@@ -1,130 +1,187 @@
-import { useEffect, useState } from "react";
-import { useApp } from "@/context/AppContext";
-import api, { apiError } from "@/lib/api";
-import { toast } from "sonner";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { PageHeader, useConfirm } from "@/components/common";
-import { Calendar as CalIcon, Plus, ChevronLeft, ChevronRight, Trash2, Loader2 } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { api } from "../services/api";
+import { useApp } from "../context/AppContext";
+import { Modal, EmptyState, Spinner, ConfirmDialog } from "../components/UI";
+import { IconCalendar, IconPlus, IconTrash } from "../components/Icons";
+import { formatDateTime } from "../i18n";
+
+const EMPTY = { title: "", notes: "", start_at: "", end_at: "" };
 
 export default function CalendarPage() {
-  const { t, lang } = useApp();
-  const confirm = useConfirm();
-  const [cursor, setCursor] = useState(new Date());
-  const [events, setEvents] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: "", date: new Date().toISOString().slice(0, 10), time: "", notes: "", type: "event" });
-  const [selected, setSelected] = useState(new Date().toISOString().slice(0, 10));
+  const { t, locale, toast, tError } = useApp();
+  const [items, setItems] = useState(null);
+  const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(EMPTY);
+  const [deleting, setDeleting] = useState(null);
 
-  const load = () => {
-    api.get("/events").then((r) => setEvents(r.data)).catch(() => {});
-    api.get("/tasks").then((r) => setTasks(r.data.filter((x) => x.due_date))).catch(() => {});
-  };
-  useEffect(() => { load(); }, []);
+  const load = useCallback(() => {
+    api.get("/events").then((d) => setItems(d.items)).catch((e) => toast(tError(e), "error"));
+  }, [toast, tError]);
+  useEffect(() => { load(); }, [load]);
 
-  const year = cursor.getFullYear(), month = cursor.getMonth();
-  const first = new Date(year, month, 1);
-  const startDay = first.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = [];
-  for (let i = 0; i < startDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  const monthLabel = useMemo(() => {
+    const d = new Date(cursor.y, cursor.m, 1);
+    try {
+      return new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(d);
+    } catch { return d.toDateString(); }
+  }, [cursor, locale]);
 
-  const dateStr = (d) => `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  const itemsOn = (d) => {
-    const ds = dateStr(d);
-    return [...events.filter((e) => e.date === ds).map((e) => ({ ...e, kind: "event" })),
-            ...tasks.filter((tk) => tk.due_date === ds).map((tk) => ({ ...tk, kind: "task" }))];
-  };
-  const monthLabel = new Intl.DateTimeFormat(lang === "ar" ? "ar-EG" : "en-US", { month: "long", year: "numeric" }).format(cursor);
-  const weekdays = lang === "ar" ? ["أحد", "إثن", "ثلا", "أرب", "خمي", "جمع", "سبت"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // build a 6x7 grid for the visible month
+  const grid = useMemo(() => {
+    const first = new Date(cursor.y, cursor.m, 1);
+    const startPad = (first.getDay() + 6) % 7; // Monday-first
+    const days = [];
+    const start = new Date(cursor.y, cursor.m, 1 - startPad);
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }, [cursor]);
 
-  const save = async () => {
-    if (!form.title.trim()) return toast.error(t("title"));
-    setSaving(true);
-    try { await api.post("/events", form); toast.success(t("created")); setOpen(false); setForm({ title: "", date: selected, time: "", notes: "", type: "event" }); load(); }
-    catch (e) { toast.error(apiError(e)); } finally { setSaving(false); }
-  };
-  const del = async (ev) => {
-    if (!(await confirm({ title: t("delete"), danger: true, confirmText: t("delete") }))) return;
-    try { await api.delete(`/events/${ev.id}`); toast.success(t("deleted")); load(); } catch (e) { toast.error(apiError(e)); }
+  const eventsOn = (day) => {
+    if (!items) return [];
+    return items.filter((ev) => {
+      const d = new Date(ev.start_at.endsWith("Z") ? ev.start_at : ev.start_at + "Z");
+      return d.getFullYear() === day.getFullYear() && d.getMonth() === day.getMonth() && d.getDate() === day.getDate();
+    });
   };
 
-  const selItems = selected ? [...events.filter((e) => e.date === selected).map((e) => ({ ...e, kind: "event" })),
-    ...tasks.filter((tk) => tk.due_date === selected).map((tk) => ({ ...tk, kind: "task" }))] : [];
+  const submit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/events", {
+        title: form.title, notes: form.notes,
+        start_at: new Date(form.start_at).toISOString(),
+        end_at: form.end_at ? new Date(form.end_at).toISOString() : null,
+      });
+      setAdding(false);
+      load();
+    } catch (err) { toast(tError(err), "error"); }
+  };
+
+  const remove = async () => {
+    try { await api.del(`/events/${deleting.id}`); load(); }
+    catch (err) { toast(tError(err), "error"); }
+  };
+
+  const shift = (delta) => setCursor((c) => {
+    const d = new Date(c.y, c.m + delta, 1);
+    return { y: d.getFullYear(), m: d.getMonth() };
+  });
+
+  const today = new Date();
+  const weekdayHeader = useMemo(() => {
+    // Monday-first labels
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
+    return [1, 2, 3, 4, 5, 6, 0].map((dow) => {
+      const d = new Date(2024, 0, 1 + dow); // 2024-01-01 is a Monday
+      try { return fmt.format(d); } catch { return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][dow]; }
+    });
+  }, [locale]);
 
   return (
     <div>
-      <PageHeader title={t("calendar")} icon={CalIcon}
-        action={<Button onClick={() => { setForm((f) => ({ ...f, date: selected })); setOpen(true); }} data-testid="create-event-button"><Plus className="h-4 w-4 me-1" />{t("add")}</Button>} />
-      <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="p-4 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <Button variant="ghost" size="icon" onClick={() => setCursor(new Date(year, month - 1, 1))}><ChevronLeft className="h-5 w-5 rtl:rotate-180" /></Button>
-            <div className="font-semibold head-font capitalize">{monthLabel}</div>
-            <Button variant="ghost" size="icon" onClick={() => setCursor(new Date(year, month + 1, 1))}><ChevronRight className="h-5 w-5 rtl:rotate-180" /></Button>
-          </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-1">
-            {weekdays.map((w) => <div key={w} className="py-1">{w}</div>)}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((d, i) => {
-              if (!d) return <div key={i} />;
-              const ds = dateStr(d);
-              const has = itemsOn(d).length;
-              const isToday = ds === new Date().toISOString().slice(0, 10);
-              const isSel = ds === selected;
-              return (
-                <button key={i} onClick={() => setSelected(ds)} data-testid={`cal-day-${d}`}
-                  className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm relative transition-colors ${isSel ? "bg-primary text-primary-foreground" : isToday ? "bg-primary/10 text-primary" : "hover:bg-secondary"}`}>
-                  {d}
-                  {has > 0 && <span className={`absolute bottom-1.5 h-1.5 w-1.5 rounded-full ${isSel ? "bg-primary-foreground" : "bg-accent"}`} />}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="font-semibold mb-3">{formatDate(selected, lang)}</div>
-          {selItems.length === 0 ? <p className="text-sm text-muted-foreground py-8 text-center">{t("no_events")}</p> :
-            <div className="space-y-2">
-              {selItems.map((it) => (
-                <div key={it.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
-                  <span className={`h-2 w-2 rounded-full ${it.kind === "task" ? "bg-accent" : "bg-primary"}`} />
-                  <div className="flex-1 min-w-0"><div className="text-sm font-medium truncate">{it.title}</div>
-                    {it.time && <div className="text-xs text-muted-foreground">{it.time}</div>}
-                    <div className="text-[11px] text-muted-foreground">{it.kind === "task" ? t("tasks") : t("calendar")}</div></div>
-                  {it.kind === "event" && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del(it)}><Trash2 className="h-4 w-4" /></Button>}
-                </div>
-              ))}
-            </div>}
-        </Card>
+      <div style={{ display: "flex", gap: "0.7rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+        <button className="icon-btn" onClick={() => shift(-1)} aria-label={t("prevMonth")}>‹</button>
+        <h2 style={{ margin: 0, minWidth: "180px", textAlign: "center" }}>{monthLabel}</h2>
+        <button className="icon-btn" onClick={() => shift(1)} aria-label={t("nextMonth")}>›</button>
+        <div style={{ flex: 1 }}></div>
+        <button className="btn btn-primary" onClick={() => { setAdding(true); setForm(EMPTY); }}>
+          <IconPlus />{t("newEvent")}
+        </button>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{t("add")}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>{t("title")}</Label><Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="mt-1.5" data-testid="event-title-input" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>{t("date")}</Label><Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} className="mt-1.5" /></div>
-              <div><Label>Time</Label><Input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} className="mt-1.5" /></div>
+      <div className="glass card" style={{ overflowX: "auto" }}>
+        {items === null ? <Spinner /> : (
+          <div style={{ minWidth: "640px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", marginBottom: "4px" }}>
+              {weekdayHeader.map((w, i) => (
+                <div key={i} style={{ textAlign: "center", fontSize: "var(--text-xs)", color: "var(--text-3)", fontWeight: 600 }}>{w}</div>
+              ))}
             </div>
-            <div><Label>{t("notes")}</Label><Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} className="mt-1.5" /></div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
+              {grid.map((day, i) => {
+                const isToday = day.toDateString() === today.toDateString();
+                const inMonth = day.getMonth() === cursor.m;
+                const evs = eventsOn(day);
+                return (
+                  <div key={i} style={{
+                    minHeight: "72px", borderRadius: "var(--radius-sm)",
+                    background: isToday ? "rgba(54,139,255,0.12)" : "rgba(10,16,26,0.5)",
+                    border: `1px solid ${isToday ? "rgba(105,213,255,0.4)" : "var(--border)"}`,
+                    padding: "0.35rem", opacity: inMonth ? 1 : 0.35,
+                  }}>
+                    <div style={{ fontSize: "var(--text-xs)", color: "var(--text-2)", marginBottom: "0.2rem" }}>{day.getDate()}</div>
+                    {evs.map((ev) => (
+                      <button key={ev.id} onClick={() => setDeleting(ev)}
+                              style={{
+                                display: "block", width: "100%", textAlign: "start",
+                                fontSize: "0.68rem", padding: "0.15rem 0.3rem", marginBottom: "2px",
+                                borderRadius: "6px", border: "1px solid rgba(105,213,255,.3)",
+                                background: "rgba(54,139,255,.15)", color: "var(--cyan)",
+                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                cursor: "pointer",
+                              }} title={ev.title}>
+                        {ev.title}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>{t("cancel")}</Button>
-            <Button onClick={save} disabled={saving} data-testid="event-save">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("save")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
+
+      {adding && (
+        <Modal title={t("newEvent")} onClose={() => setAdding(false)}>
+          <form onSubmit={submit}>
+            <div className="field">
+              <label>{t("taskTitle")} *</label>
+              <input className="input" required maxLength={200} value={form.title}
+                     onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div className="field">
+              <label>{t("startAt")} *</label>
+              <input className="input" type="datetime-local" required value={form.start_at}
+                     onChange={(e) => setForm({ ...form, start_at: e.target.value })} />
+            </div>
+            <div className="field">
+              <label>{t("endAt")} ({t("optional")})</label>
+              <input className="input" type="datetime-local" value={form.end_at}
+                     onChange={(e) => setForm({ ...form, end_at: e.target.value })} />
+            </div>
+            <div className="field">
+              <label>{t("notes")} ({t("optional")})</label>
+              <textarea className="textarea" value={form.notes} maxLength={5000}
+                        onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </div>
+            <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end" }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAdding(false)}>{t("cancel")}</button>
+              <button className="btn btn-primary btn-sm">{t("save")}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {deleting && (
+        <Modal title={deleting.title} onClose={() => setDeleting(null)}>
+          <p style={{ marginTop: 0 }}>
+            {formatDateTime(deleting.start_at, locale)}
+            {deleting.end_at ? ` → ${formatDateTime(deleting.end_at, locale)}` : ""}
+          </p>
+          {deleting.notes && <p style={{ color: "var(--text-2)" }}>{deleting.notes}</p>}
+          <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end" }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setDeleting(null)}>{t("close")}</button>
+            <button className="btn btn-danger btn-sm" onClick={() => { remove(); setDeleting(null); }}>
+              <IconTrash style={{ width: 14, height: 14 }} />{t("delete")}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
