@@ -33,6 +33,15 @@ jobs:
       - name: Remove stale config files
         run: rm -f postcss.config.js postcss.config.cjs tailwind.config.js tailwind.config.cjs
 
+      - name: Remove stale JS files that have a JSX twin
+        run: |
+          find src -name '*.js' | while read -r f; do
+            if [ -f "${f%.js}.jsx" ]; then
+              echo "removing $f"
+              rm -f "$f"
+            fi
+          done
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
