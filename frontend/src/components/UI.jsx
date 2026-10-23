@@ -3,12 +3,12 @@ import React from "react";
 import { useApp } from "../context/AppContext";
 import { IconX, IconAlert } from "./Icons";
 
-export function Modal({ title, onClose, children }) {
+export function Modal({ title, onClose, children, wide }) {
   const { t } = useApp();
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={title}
          onClick={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="modal">
+      <div className="modal" style={wide ? { width: "min(96vw, 780px)" } : undefined}>
         <div className="modal-head">
           <h3>{title}</h3>
           <button className="icon-btn" onClick={onClose} aria-label={t("close")}>

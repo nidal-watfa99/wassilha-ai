@@ -37,3 +37,8 @@ export const IconX = I("M18 6L6 18M6 6l12 12");
 export const IconLogout = I("M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9");
 export const IconAlert = I("M12 9v4m0 4h.01M10.3 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0z");
 export const IconDown = I("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3");
+
+export const IconMap = I("M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z");
+export const IconBell = I("M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0");
+export const IconId = I("M3 5h18v14H3V5zm5 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm-3 6c0-2 1.5-3 3-3s3 1 3 3m4-8h5m-5 4h5");
+export const IconInvoice = I("M6 2h12v20l-3-2-3 2-3-2-3 2V2zM9 7h6M9 11h6M9 15h3");

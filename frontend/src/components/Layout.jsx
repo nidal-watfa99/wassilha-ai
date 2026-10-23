@@ -7,8 +7,10 @@ import { useCall } from "../context/CallContext";
 import {
   IconHome, IconUsers, IconChat, IconPhone, IconVideo, IconSpark, IconSquare,
   IconCalendar, IconDoc, IconChart, IconBox, IconCalc, IconGear, IconMenu,
-  IconLogout, IconSearch, IconMic, IconStop,
+  IconLogout, IconSearch, IconMic, IconStop, IconMap, IconBell, IconId, IconInvoice,
 } from "./Icons";
+import { useBiz, isOn, getDue } from "../services/biz";
+import { SetupWizard } from "../pages/Business";
 import { LOCALES } from "../i18n";
 import { LOCAL_MODE } from "../services/api";
 
@@ -23,6 +25,10 @@ const NAV = [
   { to: "/insights", key: "insights", Icon: IconChart },
   { to: "/products", key: "products", Icon: IconBox },
   { to: "/calculator", key: "calculator", Icon: IconCalc },
+  { to: "/employees", key: "employees", Icon: IconId },
+  { to: "/invoices", key: "invoices", Icon: IconInvoice },
+  { to: "/map", key: "map", Icon: IconMap },
+  { to: "/business", key: "business", Icon: IconGear },
   { to: "/settings", key: "settings", Icon: IconGear },
 ];
 
@@ -42,6 +48,22 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const biz = useBiz();
+  const due = getDue(biz);
+
+  // browser notification for due invoices (once per day, while the app is open)
+  useEffect(() => {
+    const check = () => {
+      if (!due.length || !("Notification" in window) || Notification.permission !== "granted") return;
+      const day = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem("wassilha_notified") === day) return;
+      localStorage.setItem("wassilha_notified", day);
+      new Notification(t("inv_notifTitle"), { body: `${due.length} ${t("inv_notifBody")}` });
+    };
+    check();
+    const id = setInterval(check, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [due.length, t]);
 
   // close the mobile sidebar on navigation
   useEffect(() => setSidebarOpen(false), [location.pathname]);
@@ -62,11 +84,11 @@ export function Layout() {
           </div>
         </div>
         <nav className="sidebar-nav" aria-label={t("appName")}>
-          {NAV.map(({ to, key, Icon, end }) => (
+          {NAV.filter((n) => isOn(biz, n.key)).map(({ to, key, Icon, end }) => (
             <NavLink key={to} to={to} end={end}
                      className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
               <Icon />
-              <span>{t(key)}</span>
+              <span>{biz.terms[key] || t(key)}</span>
             </NavLink>
           ))}
         </nav>
@@ -101,6 +123,12 @@ export function Layout() {
             <span className={`badge ${rt.online ? "badge-green" : ""}`} title={t("sessionActive")}>
               {rt.online ? "●" : "○"}
             </span>
+            {due.length > 0 && (
+              <button className="icon-btn" style={{ position: "relative" }} onClick={() => navigate("/invoices")} aria-label={t("inv_dueTitle")} title={t("inv_dueTitle")}>
+                <IconBell />
+                <span className="badge badge-red" style={{ position: "absolute", top: -4, insetInlineEnd: -4, padding: "0 5px", fontSize: "0.65rem" }}>{due.length}</span>
+              </button>
+            )}
             <LangSwitch compact />
           </div>
         </header>
@@ -123,6 +151,7 @@ export function Layout() {
         </nav>
       </div>
 
+      {!biz.configured && <SetupWizard />}
       {call.status !== "idle" && <CallOverlay />}
     </div>
   );

@@ -1,6 +1,8 @@
 /* Localization: Arabic (RTL), English, Spanish (LTR).
    t(key) resolves dot-notation keys; missing keys fall back to English. */
 
+import { BIZ } from "./biz";
+
 export const LOCALES = {
   ar: { dir: "rtl", label: "العربية" },
   en: { dir: "ltr", label: "English" },
@@ -382,7 +384,7 @@ export const DICTS = { ar, en, es };
 
 export function makeT(locale) {
   const dict = DICTS[locale] || en;
-  return (key) => dict[key] ?? en[key] ?? key;
+  return (key) => dict[key] ?? BIZ[locale]?.[key] ?? en[key] ?? BIZ.en[key] ?? key;
 }
 
 export function localeDir(locale) {
