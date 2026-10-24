@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconUsers, IconPlus, IconEdit, IconTrash } from "../components/Icons";
+import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
 import { useBiz, upsert, remove, nextNo, uid, fmt, payroll, service, todayStr } from "../services/biz";
 
@@ -130,7 +131,7 @@ export default function Employees() {
               <F label={t("emp_payType")}><select className="select" value={f.payType} onChange={set("payType")}>
                 {[["monthly", "emp_monthly"], ["daily", "emp_dailyPay"], ["hourly", "emp_hourly"], ["piece", "emp_piece"]].map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}</select></F>
               <F label={t("emp_salary")}><input className="input" type="number" step="0.01" min="0" value={f.salary} onChange={set("salary")} {...ltr} /></F>
-              <F label={t("currency")}><input className="input" maxLength={5} value={f.currency} onChange={set("currency")} {...ltr} /></F>
+              <F label={t("currency")}><CurrencyPicker value={f.currency} onChange={(v) => setF((p) => ({ ...p, currency: v }))} /></F>
               <F label={t("emp_payMethod")}><input className="input" value={f.payMethod} onChange={set("payMethod")} /></F>
               <F label={t("emp_taxRate")}><input className="input" type="number" min="0" max="100" step="any" value={f.taxRate} onChange={set("taxRate")} {...ltr} /></F>
               <F label={t("emp_insurance")}><input className="input" value={f.insuranceNo} onChange={set("insuranceNo")} {...ltr} /></F>

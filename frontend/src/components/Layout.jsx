@@ -25,6 +25,8 @@ const NAV = [
   { to: "/insights", key: "insights", Icon: IconChart },
   { to: "/products", key: "products", Icon: IconBox },
   { to: "/calculator", key: "calculator", Icon: IconCalc },
+  { to: "/expenses", key: "expenses", Icon: IconChart },
+  { to: "/reports", key: "reports", Icon: IconChart },
   { to: "/catalog", key: "catalog", Icon: IconBox },
   { to: "/inventory", key: "inventory", Icon: IconBox },
   { to: "/employees", key: "employees", Icon: IconId },

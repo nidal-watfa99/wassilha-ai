@@ -1,5 +1,13 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+  cur_other: "Other (type it manually)",
+expenses: "Expenses", reports: "Reports", exp_new: "New expense", exp_date: "Date", exp_cat: "Category", exp_method: "Payment method", exp_payee: "Paid to / vendor", exp_repeat: "Repeat next month",
+  exp_rent: "Rent", exp_salaries: "Salaries", exp_purchases: "Purchases / materials", exp_utilities: "Utilities", exp_transport: "Transport", exp_marketing: "Marketing", exp_maintenance: "Maintenance", exp_taxes: "Taxes & fees", exp_other: "Other",
+  exp_m_cash: "Cash", exp_m_transfer: "Transfer", exp_m_wallet: "Wallet", exp_m_card: "Card",
+  rep_month: "This month", rep_last: "Last month", rep_year: "This year", rep_sales: "Sales (invoiced)", rep_collected: "Collected", rep_owed: "Outstanding", rep_expenses: "Expenses",
+  rep_profit: "Net profit (collected − expenses)", rep_accrual: "Profit (invoiced − expenses)", rep_note: "Amounts are grouped by invoice date; drafts and cancelled documents are excluded.",
+  rep_otherCur: "documents in other currencies excluded", rep_trend: "Last 6 months", rep_topCust: "Top customers", rep_expByCat: "Expenses by category", rep_snapshot: "Current snapshot",
+  rep_overdue: "Overdue invoices", rep_lowStock: "Items running low", rep_payroll: "Monthly payroll", rep_csvInv: "Export invoices (CSV)", rep_csvExp: "Export expenses (CSV)",
 catalog: "Product catalog", cat_new: "New product", cat_import: "Import old products", cat_offers: "Offers", cat_unavail: "Unavailable", cat_allCats: "All categories",
   cat_offer: "Offer", cat_hello: "Hello", cat_big: "Video is larger than 60 MB. Use a link instead.", cat_mediaErr: "Could not complete the operation.",
   cat_sec_basic: "Product details", cat_category: "Category", cat_brand: "Brand", cat_featured: "Featured", cat_desc: "Description", cat_variants: "Variants (colors, sizes…)",
@@ -64,6 +72,14 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+  cur_other: "أخرى (اكتب يدوياً)",
+expenses: "المصروفات", reports: "التقارير", exp_new: "مصروف جديد", exp_date: "التاريخ", exp_cat: "البند", exp_method: "طريقة الدفع", exp_payee: "المدفوع له / المورّد", exp_repeat: "تكرار في الشهر القادم",
+  exp_rent: "إيجار", exp_salaries: "رواتب", exp_purchases: "مشتريات / مواد", exp_utilities: "كهرباء وماء واتصالات", exp_transport: "نقل", exp_marketing: "دعاية وتسويق", exp_maintenance: "صيانة", exp_taxes: "ضرائب ورسوم", exp_other: "أخرى",
+  exp_m_cash: "نقداً", exp_m_transfer: "حوالة", exp_m_wallet: "محفظة", exp_m_card: "بطاقة",
+  rep_month: "هذا الشهر", rep_last: "الشهر الماضي", rep_year: "هذه السنة", rep_sales: "المبيعات (المفوترة)", rep_collected: "المحصَّل", rep_owed: "المتبقي على الزبائن", rep_expenses: "المصروفات",
+  rep_profit: "صافي الربح (المحصَّل − المصروفات)", rep_accrual: "الربح (المفوتر − المصروفات)", rep_note: "تُحتسب المبالغ حسب تاريخ الفاتورة، وتُستثنى المسودات والملغاة.",
+  rep_otherCur: "مستندات بعملة أخرى مستثناة", rep_trend: "آخر 6 أشهر", rep_topCust: "أكثر الزبائن شراءً", rep_expByCat: "المصروفات حسب البند", rep_snapshot: "الوضع الحالي",
+  rep_overdue: "فواتير متأخرة", rep_lowStock: "أصناف على وشك النفاد", rep_payroll: "الرواتب الشهرية", rep_csvInv: "تصدير الفواتير (CSV)", rep_csvExp: "تصدير المصروفات (CSV)",
 catalog: "كتالوج المنتجات", cat_new: "منتج جديد", cat_import: "استيراد المنتجات القديمة", cat_offers: "العروض", cat_unavail: "غير متاحة", cat_allCats: "كل الفئات",
   cat_offer: "عرض", cat_hello: "مرحباً", cat_big: "حجم الفيديو أكبر من 60 ميغابايت. استخدم رابطاً بدلاً منه.", cat_mediaErr: "تعذّر إتمام العملية.",
   cat_sec_basic: "تفاصيل المنتج", cat_category: "الفئة", cat_brand: "العلامة التجارية", cat_featured: "مميز", cat_desc: "الوصف", cat_variants: "الخيارات (ألوان، مقاسات…)",

@@ -3,16 +3,16 @@
 import { useSyncExternalStore } from "react";
 
 export const KEY = "wassilha_biz_v1";
-export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory", "catalog"];
+export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory", "catalog", "expenses", "reports"];
 
 const PRESETS = {
-  shop: ["contacts", "products", "catalog", "inventory", "invoices", "employees", "map", "tasks", "documents", "insights", "calculator", "ai"],
-  contractor: ["contacts", "products", "catalog", "inventory", "invoices", "employees", "map", "tasks", "calendar", "documents", "insights", "calculator"],
+  shop: ["contacts", "products", "catalog", "inventory", "expenses", "reports", "invoices", "employees", "map", "tasks", "documents", "insights", "calculator", "ai"],
+  contractor: ["contacts", "products", "catalog", "inventory", "expenses", "reports", "invoices", "employees", "map", "tasks", "calendar", "documents", "insights", "calculator"],
   company: MODULES,
-  tailor: ["contacts", "products", "catalog", "inventory", "invoices", "employees", "tasks", "calendar", "calculator", "insights", "map"],
-  social: ["contacts", "employees", "tasks", "calendar", "documents", "insights", "map", "messages", "ai"],
+  tailor: ["contacts", "products", "catalog", "inventory", "expenses", "reports", "invoices", "employees", "tasks", "calendar", "calculator", "insights", "map"],
+  social: ["contacts", "employees", "expenses", "reports", "tasks", "calendar", "documents", "insights", "map", "messages", "ai"],
   factory: MODULES,
-  freelancer: ["contacts", "invoices", "tasks", "calendar", "documents", "ai", "calculator", "insights"],
+  freelancer: ["contacts", "invoices", "expenses", "reports", "tasks", "calendar", "documents", "ai", "calculator", "insights"],
   custom: MODULES,
 };
 export const TYPE_KEYS = Object.keys(PRESETS);
@@ -30,7 +30,7 @@ const TERMS = {
 
 const DEFAULT = {
   configured: false, type: "custom", name: "", currency: "USD", taxRate: 0, reminderDays: 3,
-  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], seq: { invoice: 0, employee: 0, quote: 0 },
+  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], seq: { invoice: 0, employee: 0, quote: 0 },
 };
 
 const mem = {};

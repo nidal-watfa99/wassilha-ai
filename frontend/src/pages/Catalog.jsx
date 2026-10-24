@@ -4,13 +4,14 @@ import { api } from "../services/api";
 import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
+import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
 import { useBiz, upsert, remove, uid, fmt, nextNo, todayStr, stockLeft } from "../services/biz";
 import { putMedia, getMedia, delMedia, compressImage } from "../services/media";
 
 const BLANK = {
   name: "", sku: "", category: "", brand: "", unit: "", status: "available", featured: false, description: "", variants: "", tags: "", warranty: "",
-  price: "", wholesale: "", cost: "", minOrder: "", offerLabel: "", offerPct: "", offerPrice: "", offerFrom: "", offerTo: "",
+  currency: "", price: "", wholesale: "", cost: "", minOrder: "", offerLabel: "", offerPct: "", offerPrice: "", offerFrom: "", offerTo: "",
   invId: "", supplier: "", links: "", media: [], customers: [],
 };
 const ST = ["available", "unavailable", "coming", "hidden"];
@@ -43,7 +44,7 @@ export default function Catalog() {
   const trash = useRef([]), fileRef = useRef(null);
   useEffect(() => { api.get("/contacts").then((d) => setContacts(d.items || [])).catch(() => {}); }, []);
 
-  const open = (p) => { trash.current = []; setF(p === "new" ? BLANK : { ...BLANK, ...p }); setModal(p); };
+  const open = (p) => { trash.current = []; setF(p === "new" ? { ...BLANK, currency: biz.currency } : { ...BLANK, ...p, currency: p.currency || biz.currency }); setModal(p); };
   const save = (e) => {
     e.preventDefault();
     trash.current.forEach(delMedia);
@@ -72,9 +73,9 @@ export default function Catalog() {
     } catch { toast(t("cat_mediaErr"), "error"); }
   };
 
-  const msg = (p, c) => { const pr = priceNow(p); return `${t("cat_hello")} ${c?.name || ""}\n${p.name}${p.description ? "\n" + p.description : ""}\n${fmt(pr.now)} ${biz.currency}${pr.offer ? ` (${p.offerLabel || t("cat_offer")}${Number(p.offerPct) > 0 ? " -" + p.offerPct + "%" : ""})` : ""}\n${biz.name || ""}`; };
+  const msg = (p, c) => { const pr = priceNow(p); return `${t("cat_hello")} ${c?.name || ""}\n${p.name}${p.description ? "\n" + p.description : ""}\n${fmt(pr.now)} ${p.currency || biz.currency}${pr.offer ? ` (${p.offerLabel || t("cat_offer")}${Number(p.offerPct) > 0 ? " -" + p.offerPct + "%" : ""})` : ""}\n${biz.name || ""}`; };
   const invoiceFor = (p, c) => {
-    upsert("invoices", { id: uid(), no: nextNo("invoice"), type: "invoice", customer: c.name, issueDate: todayStr(), dueDate: "", currency: biz.currency, discount: 0, tax: biz.taxRate, notes: "", paidAmount: "", status: "draft", items: [{ desc: p.name, qty: 1, price: priceNow(p).now }] });
+    upsert("invoices", { id: uid(), no: nextNo("invoice"), type: "invoice", customer: c.name, issueDate: todayStr(), dueDate: "", currency: p.currency || biz.currency, discount: 0, tax: biz.taxRate, notes: "", paidAmount: "", status: "draft", items: [{ desc: p.name, qty: 1, price: priceNow(p).now }] });
     nav("/invoices");
   };
 
@@ -111,7 +112,7 @@ export default function Catalog() {
                      : <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", background: "rgba(255,255,255,.04)", borderRadius: 10 }}><IconBox /></div>}
                 <strong style={{ fontSize: "var(--text-sm)" }}>{p.featured && "⭐ "}{p.name}</strong>
                 <div dir="ltr" style={{ textAlign: "start" }}>
-                  {x.offer && <s style={{ color: "var(--text-3)", marginInlineEnd: 6 }}>{fmt(x.base)}</s>}<b>{fmt(x.now)} {biz.currency}</b>
+                  {x.offer && <s style={{ color: "var(--text-3)", marginInlineEnd: 6 }}>{fmt(x.base)}</s>}<b>{fmt(x.now)} {p.currency || biz.currency}</b>
                 </div>
                 <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
                   {x.offer && <span className="badge badge-red">{p.offerLabel || t("cat_offer")}</span>}
@@ -145,6 +146,7 @@ export default function Catalog() {
             </Grid>
             <Sec>{t("cat_sec_price")}</Sec>
             <Grid>
+              <F label={t("currency")}><CurrencyPicker value={f.currency} onChange={(v) => setF((p) => ({ ...p, currency: v }))} /></F>
               {[["price", "stk_price"], ["wholesale", "cat_wholesale"], ["cost", "stk_cost"], ["minOrder", "cat_minOrder"]].map(([k, l]) => <F key={k} label={t(l)}><input className="input" type="number" min="0" step="any" value={f[k]} onChange={set(k)} {...ltr} /></F>)}
             </Grid>
             <Sec>{t("cat_sec_offer")}</Sec>
@@ -156,7 +158,7 @@ export default function Catalog() {
               <F label={t("cat_to")}><input className="input" type="date" value={f.offerTo} onChange={set("offerTo")} {...ltr} /></F>
             </Grid>
             <div className="glass card" dir="ltr" style={{ fontSize: "var(--text-sm)" }}>
-              {t("cat_priceNow")}: <b>{fmt(pr.now)} {biz.currency}</b>{pr.offer ? " ✓ " + t("cat_offer") : ""}
+              {t("cat_priceNow")}: <b>{fmt(pr.now)} {f.currency || biz.currency}</b>{pr.offer ? " ✓ " + t("cat_offer") : ""}
               {Number(f.cost) > 0 && ` · ${t("cat_margin")}: ${fmt(pr.now - Number(f.cost))} (${fmt(((pr.now - Number(f.cost)) / (pr.now || 1)) * 100)}%)`}
             </div>
             <Sec>{t("inventory")}</Sec>

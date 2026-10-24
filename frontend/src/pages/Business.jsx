@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useApp } from "../context/AppContext";
+import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, ltr } from "../components/Form";
 import { useBiz, update, applyPreset, exportBackup, importBackup, MODULES, TYPE_KEYS } from "../services/biz";
 
@@ -28,7 +29,7 @@ export function SetupWizard({ onClose }) {
           </div>
           <Grid>
             <F label={t("wzName")} wide><input className="input" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></F>
-            <F label={t("wzCurrency")}><input className="input" maxLength={5} value={currency} onChange={(e) => setCurrency(e.target.value)} {...ltr} /></F>
+            <F label={t("wzCurrency")}><CurrencyPicker value={currency} onChange={setCurrency} /></F>
             <F label={t("wzTax")}><input className="input" type="number" min="0" max="100" step="any" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} {...ltr} /></F>
           </Grid>
           <div style={{ display: "flex", gap: "0.7rem", justifyContent: "space-between", flexWrap: "wrap", marginTop: "0.6rem" }}>
@@ -41,7 +42,7 @@ export function SetupWizard({ onClose }) {
   );
 }
 
-const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory", catalog: "catalog" };
+const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory", catalog: "catalog", expenses: "expenses", reports: "reports" };
 
 export default function Business() {
   const { t, locale, toast } = useApp();
@@ -75,7 +76,7 @@ export default function Business() {
         <h3 style={{ marginTop: 0 }}>{t("bzInfo")}</h3>
         <Grid>
           <F label={t("wzName")} wide><input className="input" value={biz.name} onChange={(e) => set("name", e.target.value)} /></F>
-          <F label={t("wzCurrency")}><input className="input" maxLength={5} value={biz.currency} onChange={(e) => set("currency", e.target.value)} {...ltr} /></F>
+          <F label={t("wzCurrency")}><CurrencyPicker value={biz.currency} onChange={(v) => set("currency", v)} /></F>
           <F label={t("wzTax")}><input className="input" type="number" min="0" max="100" step="any" value={biz.taxRate} onChange={(e) => set("taxRate", e.target.value)} {...ltr} /></F>
           <F label={t("bzRemind")}><input className="input" type="number" min="0" max="60" value={biz.reminderDays} onChange={(e) => set("reminderDays", e.target.value)} {...ltr} /></F>
           <F label={t("bzType")}>

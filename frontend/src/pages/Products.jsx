@@ -1,3 +1,5 @@
+import CurrencyPicker from "../components/CurrencyPicker";
+import { getBiz } from "../services/biz";
 import React, { useCallback, useEffect, useState } from "react";
 import { api } from "../services/api";
 import { useApp } from "../context/AppContext";
@@ -11,9 +13,9 @@ export default function Products() {
   const [payments, setPayments] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [prodModal, setProdModal] = useState(null); // "new" | product
-  const [prodForm, setProdForm] = useState({ name: "", price: "", currency: "USD", notes: "" });
+  const [prodForm, setProdForm] = useState({ name: "", price: "", currency: getBiz().currency || "USD", notes: "" });
   const [payModal, setPayModal] = useState(false);
-  const [payForm, setPayForm] = useState({ product_id: "", contact_id: "", amount: "", currency: "USD", note: "" });
+  const [payForm, setPayForm] = useState({ product_id: "", contact_id: "", amount: "", currency: getBiz().currency || "USD", note: "" });
   const [deleting, setDeleting] = useState(null); // {type, item}
 
   const load = useCallback(() => {
@@ -65,7 +67,7 @@ export default function Products() {
       <div>
         <div className="section-title" style={{ marginTop: 0 }}>
           <h2>{t("products")}</h2>
-          <button className="btn btn-primary btn-sm" onClick={() => { setProdModal("new"); setProdForm({ name: "", price: "", currency: "USD", notes: "" }); }}>
+          <button className="btn btn-primary btn-sm" onClick={() => { setProdModal("new"); setProdForm({ name: "", price: "", currency: getBiz().currency || "USD", notes: "" }); }}>
             <IconPlus />{t("newProduct")}
           </button>
         </div>
@@ -114,7 +116,7 @@ export default function Products() {
       <div>
         <div className="section-title">
           <h2>{t("newPayment")}</h2>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setPayModal(true); setPayForm({ product_id: "", contact_id: "", amount: "", currency: "USD", note: "" }); }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setPayModal(true); setPayForm({ product_id: "", contact_id: "", amount: "", currency: getBiz().currency || "USD", note: "" }); }}>
             <IconPlus />{t("newPayment")}
           </button>
         </div>
@@ -170,8 +172,7 @@ export default function Products() {
             </div>
             <div className="field">
               <label>{t("currency")} *</label>
-              <input className="input" required maxLength={5} dir="ltr" style={{ textAlign: "start" }}
-                     value={prodForm.currency} onChange={(e) => setProdForm({ ...prodForm, currency: e.target.value.toUpperCase() })} />
+              <CurrencyPicker value={prodForm.currency} onChange={(v) => setProdForm({ ...prodForm, currency: v })} />
             </div>
             <div className="field">
               <label>{t("notes")} ({t("optional")})</label>
@@ -196,8 +197,7 @@ export default function Products() {
             </div>
             <div className="field">
               <label>{t("currency")} *</label>
-              <input className="input" required maxLength={5} dir="ltr" style={{ textAlign: "start" }}
-                     value={payForm.currency} onChange={(e) => setPayForm({ ...payForm, currency: e.target.value.toUpperCase() })} />
+              <CurrencyPicker value={payForm.currency} onChange={(v) => setPayForm({ ...payForm, currency: v })} />
             </div>
             <div className="field">
               <label>{t("products")} ({t("optional")})</label>

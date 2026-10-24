@@ -3,6 +3,7 @@ import { api } from "../services/api";
 import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconInvoice, IconPlus, IconEdit, IconTrash, IconCheck } from "../components/Icons";
+import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, ltr, useForm } from "../components/Form";
 import { useBiz, upsert, remove, nextNo, uid, totals, fmt, getDue, todayStr, paidOf, leftOf } from "../services/biz";
 
@@ -140,7 +141,7 @@ export default function Invoices() {
               </F>
               <F label={t("inv_issue")}><input className="input" type="date" value={f.issueDate} onChange={set("issueDate")} {...ltr} /></F>
               <F label={t("inv_due")}><input className="input" type="date" value={f.dueDate} onChange={set("dueDate")} {...ltr} /></F>
-              <F label={t("currency")}><input className="input" maxLength={5} value={f.currency} onChange={set("currency")} {...ltr} /></F>
+              <F label={t("currency")}><CurrencyPicker value={f.currency} onChange={(v) => setF((p) => ({ ...p, currency: v }))} /></F>
               <F label={t("status")}><select className="select" value={f.status} onChange={set("status")}>
                 {["draft", "unpaid", "partial", "paid", "cancelled"].map((k) => <option key={k} value={k}>{t("inv_" + k)}</option>)}</select></F>
             </Grid>
