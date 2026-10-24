@@ -1,5 +1,13 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+catalog: "Product catalog", cat_new: "New product", cat_import: "Import old products", cat_offers: "Offers", cat_unavail: "Unavailable", cat_allCats: "All categories",
+  cat_offer: "Offer", cat_hello: "Hello", cat_big: "Video is larger than 60 MB. Use a link instead.", cat_mediaErr: "Could not complete the operation.",
+  cat_sec_basic: "Product details", cat_category: "Category", cat_brand: "Brand", cat_featured: "Featured", cat_desc: "Description", cat_variants: "Variants (colors, sizes…)",
+  cat_tags: "Tags", cat_warranty: "Warranty / notes", cat_st_available: "Available", cat_st_unavailable: "Unavailable", cat_st_coming: "Coming soon", cat_st_hidden: "Hidden",
+  cat_sec_price: "Pricing", cat_wholesale: "Wholesale price", cat_minOrder: "Minimum order qty", cat_sec_offer: "Special offer", cat_offerLabel: "Offer label (e.g. Eid sale)",
+  cat_offerPrice: "Fixed offer price", cat_from: "Offer starts", cat_to: "Offer ends", cat_priceNow: "Current price", cat_margin: "Profit",
+  cat_linkStock: "Linked inventory item", cat_sec_media: "Photos & videos", cat_addMedia: "Add photos / videos", cat_links: "Video links (YouTube, Drive… one per line)",
+  cat_sec_cust: "Interested customers (call / WhatsApp / invoice)", cat_copy: "Copy offer text", cat_copied: "Copied",
 inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_left: "Remaining", inv_lowBody: "items running low",
   emp_probation: "Under monitoring", emp_level: "Level", lvl_manager: "Manager", lvl_head: "Department head", lvl_employee: "Employee", lvl_subordinate: "Subordinate",
   emp_taxRate: "Income tax %", emp_ss: "Social security no.", emp_health: "Health insurance (provider / no.)", emp_injury: "Work injury record",
@@ -56,6 +64,14 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+catalog: "كتالوج المنتجات", cat_new: "منتج جديد", cat_import: "استيراد المنتجات القديمة", cat_offers: "العروض", cat_unavail: "غير متاحة", cat_allCats: "كل الفئات",
+  cat_offer: "عرض", cat_hello: "مرحباً", cat_big: "حجم الفيديو أكبر من 60 ميغابايت. استخدم رابطاً بدلاً منه.", cat_mediaErr: "تعذّر إتمام العملية.",
+  cat_sec_basic: "تفاصيل المنتج", cat_category: "الفئة", cat_brand: "العلامة التجارية", cat_featured: "مميز", cat_desc: "الوصف", cat_variants: "الخيارات (ألوان، مقاسات…)",
+  cat_tags: "وسوم", cat_warranty: "الكفالة / ملاحظات", cat_st_available: "متاح", cat_st_unavailable: "غير متاح", cat_st_coming: "قريباً", cat_st_hidden: "مخفي",
+  cat_sec_price: "الأسعار", cat_wholesale: "سعر الجملة", cat_minOrder: "أقل كمية للطلب", cat_sec_offer: "عرض خاص", cat_offerLabel: "اسم العرض (مثل: عرض العيد)",
+  cat_offerPrice: "سعر العرض الثابت", cat_from: "بداية العرض", cat_to: "نهاية العرض", cat_priceNow: "السعر الحالي", cat_margin: "الربح",
+  cat_linkStock: "صنف المخزون المرتبط", cat_sec_media: "الصور والفيديو", cat_addMedia: "إضافة صور / فيديو", cat_links: "روابط فيديو (يوتيوب، درايف… رابط في كل سطر)",
+  cat_sec_cust: "الزبائن المهتمون (اتصال / واتساب / فاتورة)", cat_copy: "نسخ نص العرض", cat_copied: "تم النسخ",
 inventory: "المخزون", inv_partial: "عربون مدفوع", inv_paidAmt: "المدفوع", inv_left: "المتبقي", inv_lowBody: "أصناف على وشك النفاد",
   emp_probation: "تحت المراقبة", emp_level: "المستوى الوظيفي", lvl_manager: "مدير", lvl_head: "رئيس قسم", lvl_employee: "موظف عادي", lvl_subordinate: "مرؤوس",
   emp_taxRate: "ضريبة الدخل %", emp_ss: "رقم الضمان الاجتماعي", emp_health: "التأمين الصحي (الجهة / الرقم)", emp_injury: "سجل إصابات العمل",
