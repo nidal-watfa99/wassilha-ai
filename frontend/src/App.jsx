@@ -21,6 +21,7 @@ import Employees from "./pages/Employees";
 import Invoices from "./pages/Invoices";
 import MapPage from "./pages/MapPage";
 import Business from "./pages/Business";
+import Inventory from "./pages/Inventory";
 
 function PrivateRoute({ children }) {
   const { user, authChecked } = useApp();
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="calculator" element={<Calculator />} />
           <Route path="employees" element={<Employees />} />
           <Route path="invoices" element={<Invoices />} />
+          <Route path="inventory" element={<Inventory />} />
           <Route path="map" element={<MapPage />} />
           <Route path="business" element={<Business />} />
           <Route path="settings" element={<Settings />} />

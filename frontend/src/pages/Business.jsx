@@ -4,7 +4,7 @@ import { F, Grid, ltr } from "../components/Form";
 import { useBiz, update, applyPreset, exportBackup, importBackup, MODULES, TYPE_KEYS } from "../services/biz";
 
 /* First-run wizard: the user decides what the business is; presets only suggest sections. */
-export function SetupWizard() {
+export function SetupWizard({ onClose }) {
   const { t, locale } = useApp();
   const [type, setType] = useState("shop");
   const [name, setName] = useState("");
@@ -15,7 +15,10 @@ export function SetupWizard() {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" style={{ width: "min(96vw, 560px)" }} onSubmit={start}>
-        <div className="modal-head"><h3>{t("wzTitle")}</h3></div>
+        <div className="modal-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3>{t("wzTitle")}</h3>
+          {onClose && <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>✕ {t("wzBack")}</button>}
+        </div>
         <div className="modal-body">
           <p style={{ marginTop: 0, color: "var(--text-2)" }}>{t("wzSub")}</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.5rem", marginBottom: "0.8rem" }}>
@@ -38,7 +41,7 @@ export function SetupWizard() {
   );
 }
 
-const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map" };
+const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory" };
 
 export default function Business() {
   const { t, locale, toast } = useApp();

@@ -3,13 +3,13 @@
 import { useSyncExternalStore } from "react";
 
 export const KEY = "wassilha_biz_v1";
-export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map"];
+export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory"];
 
 const PRESETS = {
-  shop: ["contacts", "products", "invoices", "employees", "map", "tasks", "documents", "insights", "calculator", "ai"],
-  contractor: ["contacts", "products", "invoices", "employees", "map", "tasks", "calendar", "documents", "insights", "calculator"],
+  shop: ["contacts", "products", "inventory", "invoices", "employees", "map", "tasks", "documents", "insights", "calculator", "ai"],
+  contractor: ["contacts", "products", "inventory", "invoices", "employees", "map", "tasks", "calendar", "documents", "insights", "calculator"],
   company: MODULES,
-  tailor: ["contacts", "products", "invoices", "employees", "tasks", "calendar", "calculator", "insights", "map"],
+  tailor: ["contacts", "products", "inventory", "invoices", "employees", "tasks", "calendar", "calculator", "insights", "map"],
   social: ["contacts", "employees", "tasks", "calendar", "documents", "insights", "map", "messages", "ai"],
   factory: MODULES,
   freelancer: ["contacts", "invoices", "tasks", "calendar", "documents", "ai", "calculator", "insights"],
@@ -30,7 +30,7 @@ const TERMS = {
 
 const DEFAULT = {
   configured: false, type: "custom", name: "", currency: "USD", taxRate: 0, reminderDays: 3,
-  modules: {}, terms: {}, employees: [], invoices: [], places: [], seq: { invoice: 0, employee: 0, quote: 0 },
+  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], seq: { invoice: 0, employee: 0, quote: 0 },
 };
 
 const mem = {};
@@ -78,7 +78,30 @@ export function applyPreset(type, locale, { name, currency, taxRate }) {
   }));
 }
 
+/* ---------- payroll ---------- */
+export function payroll(e) {
+  const adj = e.adj || [];
+  const sum = (...k) => adj.filter((a) => k.includes(a.kind)).reduce((s, a) => s + (Number(a.amount) || 0), 0);
+  const base = Number(e.salary) || 0, bonus = sum("bonus", "overtime"), adv = sum("advance"), pen = sum("penalty");
+  const tax = base * ((Number(e.taxRate) || 0) / 100);
+  const afterDed = base - adv - pen - tax;
+  return { base, bonus, adv, pen, tax, afterDed, net: afterDed + bonus };
+}
+export function service(e) {
+  if (!e.hireDate) return "";
+  const a = new Date(e.hireDate), b = e.status === "ended" && e.contractEnd ? new Date(e.contractEnd) : new Date();
+  let m = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth() - (b.getDate() < a.getDate() ? 1 : 0);
+  if (m < 0) m = 0;
+  return `${Math.floor(m / 12)}y ${m % 12}m`;
+}
+
+/* ---------- inventory ---------- */
+export const stockLeft = (i) => (Number(i.qtyIn) || 0) - (Number(i.qtyOut) || 0);
+export const getLow = (biz) => biz.inventory.filter((i) => stockLeft(i) <= (Number(i.minQty) || 0));
+
 /* ---------- invoices ---------- */
+export const paidOf = (inv) => Math.min(Number(inv.paidAmount) || 0, totals(inv).total);
+export const leftOf = (inv) => Math.max(totals(inv).total - paidOf(inv), 0);
 export const todayStr = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 export function totals(inv) {
   const sub = (inv.items || []).reduce((a, i) => a + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
@@ -94,7 +117,7 @@ export function getDue(biz) {
   const lim = new Date(limit.getTime() - limit.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const today = todayStr();
   return biz.invoices
-    .filter((i) => i.type === "invoice" && i.status === "unpaid" && i.dueDate && i.dueDate <= lim)
+    .filter((i) => i.type === "invoice" && (i.status === "unpaid" || i.status === "partial") && i.dueDate && i.dueDate <= lim)
     .map((i) => ({ inv: i, overdue: i.dueDate < today }))
     .sort((a, b) => a.inv.dueDate.localeCompare(b.inv.dueDate));
 }

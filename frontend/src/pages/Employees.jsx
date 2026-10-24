@@ -3,13 +3,14 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconUsers, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
-import { useBiz, upsert, remove, nextNo, uid, fmt } from "../services/biz";
+import { useBiz, upsert, remove, nextNo, uid, fmt, payroll, service, todayStr } from "../services/biz";
 
 const BLANK = {
   fullName: "", gender: "", birthDate: "", nationalId: "", nationality: "", maritalStatus: "", children: "",
   phone: "", email: "", address: "", ecName: "", ecPhone: "",
   jobTitle: "", department: "", branch: "", manager: "", empType: "full_time", hireDate: "", contractEnd: "", workHours: "", leaveBalance: "",
   payType: "monthly", salary: "", currency: "", payMethod: "", insuranceNo: "", status: "active", skills: "", notes: "",
+  level: "employee", taxRate: "", ssNo: "", health: "", injury: "", adj: [],
 };
 
 export default function Employees() {
@@ -19,6 +20,8 @@ export default function Employees() {
   const [modal, setModal] = useState(null); // "new" | employee
   const [del, setDel] = useState(null);
   const [f, set, setF] = useForm(BLANK);
+  const [row, setRow] = useState({ kind: "bonus", amount: "", date: todayStr(), note: "" });
+  const pr = payroll(f);
 
   const open = (emp) => {
     setF(emp === "new" ? { ...BLANK, currency: biz.currency } : { ...BLANK, ...emp });
@@ -35,8 +38,9 @@ export default function Employees() {
     const s = q.trim().toLowerCase();
     return biz.employees.filter((x) => !s || [x.fullName, x.jobTitle, x.department, x.branch, x.phone, x.no].some((v) => String(v || "").toLowerCase().includes(s)));
   }, [biz.employees, q]);
-  const payroll = biz.employees.filter((x) => x.status === "active" && x.payType === "monthly").reduce((a, x) => a + (Number(x.salary) || 0), 0);
-  const stBadge = { active: "badge-green", leave: "badge-blue", ended: "badge-red" };
+  const live = biz.employees.filter((x) => x.status !== "ended");
+  const payrollSum = live.reduce((a, x) => a + payroll(x).net, 0);
+  const stBadge = { probation: "badge-violet", active: "badge-green", leave: "badge-blue", ended: "badge-red" };
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -46,7 +50,8 @@ export default function Employees() {
       </div>
       {biz.employees.length > 0 && (
         <div className="stat-grid">
-          <div className="glass stat-card"><div className="stat-label">{t("emp_payroll")}</div><div className="stat-value">{fmt(payroll)} {biz.currency}</div></div>
+          <div className="glass stat-card"><div className="stat-label">{t("emp_payroll")}</div><div className="stat-value">{fmt(payrollSum)} {biz.currency}</div></div>
+          <div className="glass stat-card"><div className="stat-label">{t("emp_probation")}</div><div className="stat-value">{biz.employees.filter((x) => x.status === "probation").length}</div></div>
           <div className="glass stat-card"><div className="stat-label">{t("emp_active")}</div><div className="stat-value">{biz.employees.filter((x) => x.status === "active").length}</div></div>
         </div>
       )}
@@ -57,7 +62,7 @@ export default function Employees() {
         <div className="glass card table-wrap">
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--text-sm)" }}>
             <thead><tr style={{ textAlign: "start", color: "var(--text-3)" }}>
-              <th>{t("emp_no")}</th><th>{t("emp_full")}</th><th>{t("emp_title")}</th><th>{t("emp_branch")}</th><th>{t("emp_status")}</th><th />
+              <th>{t("emp_no")}</th><th>{t("emp_full")}</th><th>{t("emp_title")}</th><th>{t("emp_level")}</th><th>{t("emp_net")}</th><th>{t("emp_status")}</th><th />
             </tr></thead>
             <tbody>
               {list.map((x) => (
@@ -65,7 +70,8 @@ export default function Employees() {
                   <td dir="ltr">{x.no}</td>
                   <td><strong>{x.fullName}</strong><div style={{ color: "var(--text-3)", fontSize: "var(--text-xs)" }} dir="ltr">{x.phone}</div></td>
                   <td>{x.jobTitle}<div style={{ color: "var(--text-3)", fontSize: "var(--text-xs)" }}>{x.department}</div></td>
-                  <td>{x.branch}</td>
+                  <td>{t("lvl_" + (x.level || "employee"))}<div style={{ color: "var(--text-3)", fontSize: "var(--text-xs)" }}>{x.branch}</div></td>
+                  <td dir="ltr">{fmt(payroll(x).net)}</td>
                   <td><span className={`badge ${stBadge[x.status] || ""}`}>{t("emp_" + (x.status === "ended" ? "ended" : x.status))}</span></td>
                   <td style={{ whiteSpace: "nowrap" }}>
                     <button className="icon-btn" aria-label={t("b_edit")} onClick={() => open(x)}><IconEdit /></button>
@@ -111,7 +117,9 @@ export default function Employees() {
               <F label={t("emp_type")}><select className="select" value={f.empType} onChange={set("empType")}>
                 {["full_time", "part_time", "contract", "daily", "intern"].map((k) => <option key={k} value={k}>{t("emp_" + k)}</option>)}</select></F>
               <F label={t("emp_status")}><select className="select" value={f.status} onChange={set("status")}>
-                {["active", "leave", "ended"].map((k) => <option key={k} value={k}>{t("emp_" + k)}</option>)}</select></F>
+                {["active", "probation", "leave", "ended"].map((k) => <option key={k} value={k}>{t("emp_" + k)}</option>)}</select></F>
+              <F label={t("emp_level")}><select className="select" value={f.level} onChange={set("level")}>
+                {["manager", "head", "employee", "subordinate"].map((k) => <option key={k} value={k}>{t("lvl_" + k)}</option>)}</select></F>
               <F label={t("emp_hire")}><input className="input" type="date" value={f.hireDate} onChange={set("hireDate")} {...ltr} /></F>
               <F label={t("emp_contractEnd")}><input className="input" type="date" value={f.contractEnd} onChange={set("contractEnd")} {...ltr} /></F>
               <F label={t("emp_hours")}><input className="input" value={f.workHours} onChange={set("workHours")} /></F>
@@ -124,8 +132,39 @@ export default function Employees() {
               <F label={t("emp_salary")}><input className="input" type="number" step="0.01" min="0" value={f.salary} onChange={set("salary")} {...ltr} /></F>
               <F label={t("currency")}><input className="input" maxLength={5} value={f.currency} onChange={set("currency")} {...ltr} /></F>
               <F label={t("emp_payMethod")}><input className="input" value={f.payMethod} onChange={set("payMethod")} /></F>
+              <F label={t("emp_taxRate")}><input className="input" type="number" min="0" max="100" step="any" value={f.taxRate} onChange={set("taxRate")} {...ltr} /></F>
               <F label={t("emp_insurance")}><input className="input" value={f.insuranceNo} onChange={set("insuranceNo")} {...ltr} /></F>
+              <F label={t("emp_ss")}><input className="input" value={f.ssNo} onChange={set("ssNo")} {...ltr} /></F>
+              <F label={t("emp_health")}><input className="input" value={f.health} onChange={set("health")} /></F>
+              <F label={t("emp_injury")} wide><input className="input" value={f.injury} onChange={set("injury")} /></F>
             </Grid>
+            <Sec>{t("emp_sec_adj")}</Sec>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem" }}>
+              <select className="select" value={row.kind} onChange={(e) => setRow({ ...row, kind: e.target.value })}>
+                {["bonus", "overtime", "advance", "penalty"].map((k) => <option key={k} value={k}>{t("adj_" + k)}</option>)}</select>
+              <input className="input" type="number" min="0" step="any" placeholder={t("amount")} value={row.amount} onChange={(e) => setRow({ ...row, amount: e.target.value })} {...ltr} />
+              <input className="input" type="date" value={row.date} onChange={(e) => setRow({ ...row, date: e.target.value })} {...ltr} />
+              <input className="input" placeholder={t("emp_notes")} value={row.note} onChange={(e) => setRow({ ...row, note: e.target.value })} />
+            </div>
+            <button type="button" className="btn btn-ghost btn-sm" style={{ margin: "0.4rem 0" }} onClick={() => {
+              if (!(Number(row.amount) > 0)) return;
+              setF((p) => ({ ...p, adj: [...(p.adj || []), { id: uid(), ...row }] })); setRow({ ...row, amount: "", note: "" });
+            }}><IconPlus />{t("b_add")}</button>
+            {(f.adj || []).map((a) => (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-sm)", padding: "0.25rem 0", borderTop: "1px solid var(--border)" }}>
+                <span>{t("adj_" + a.kind)} · {a.date} {a.note && `· ${a.note}`}</span>
+                <span dir="ltr">{a.kind === "bonus" || a.kind === "overtime" ? "+" : "−"}{fmt(a.amount)}
+                  <button type="button" className="icon-btn" aria-label={t("delete")} onClick={() => setF((p) => ({ ...p, adj: p.adj.filter((x) => x.id !== a.id) }))}><IconTrash /></button></span>
+              </div>
+            ))}
+            <div className="glass card" style={{ fontSize: "var(--text-sm)", marginTop: "0.5rem" }} dir="ltr">
+              <div>{t("emp_total")}: {fmt(pr.base)}</div>
+              <div>− {t("adj_advance")}: {fmt(pr.adv)} · − {t("adj_penalty")}: {fmt(pr.pen)} · − {t("emp_tax")}: {fmt(pr.tax)}</div>
+              <div><b>{t("emp_afterDed")}: {fmt(pr.afterDed)}</b></div>
+              <div>+ {t("adj_bonus")} / {t("adj_overtime")}: {fmt(pr.bonus)}</div>
+              <div style={{ fontWeight: 700, fontSize: "1.05rem" }}>{t("emp_net")}: {fmt(pr.net)} {f.currency}</div>
+              {f.hireDate && <div>{t("emp_service")}: {service(f)}</div>}
+            </div>
             <Sec>{t("emp_sec_more")}</Sec>
             <F label={t("emp_skills")}><textarea className="textarea" rows={2} value={f.skills} onChange={set("skills")} /></F>
             <F label={t("emp_notes")}><textarea className="textarea" rows={2} value={f.notes} onChange={set("notes")} /></F>

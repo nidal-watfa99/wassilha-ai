@@ -1,11 +1,20 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_left: "Remaining", inv_lowBody: "items running low",
+  emp_probation: "Under monitoring", emp_level: "Level", lvl_manager: "Manager", lvl_head: "Department head", lvl_employee: "Employee", lvl_subordinate: "Subordinate",
+  emp_taxRate: "Income tax %", emp_ss: "Social security no.", emp_health: "Health insurance (provider / no.)", emp_injury: "Work injury record",
+  emp_sec_adj: "Bonuses, overtime, advances & penalties", adj_bonus: "Bonus", adj_overtime: "Overtime", adj_advance: "Salary advance", adj_penalty: "Penalty",
+  emp_total: "Total (base)", emp_tax: "Income tax", emp_afterDed: "Total after deductions", emp_net: "Total after bonuses", emp_service: "Service duration",
+  stk_new: "New item", stk_name: "Item", stk_sku: "Code / SKU", stk_unit: "Unit", stk_in: "Received (in)", stk_out: "Issued (out)", stk_left: "Remaining",
+  stk_min: "Alert when remaining ≤", stk_cost: "Cost price", stk_price: "Sale price", stk_supplier: "Supplier", stk_loc: "Branch / warehouse",
+  stk_ok: "In stock", stk_low: "Running low", stk_zero: "Out of stock", stk_value: "Stock value", stk_alert: "Low-stock alert", stk_alertNone: "No item is running low.",
+  stk_addIn: "+ Receive", stk_addOut: "− Issue", stk_qty: "Quantity", stk_items: "items",
   employees: "Employees", invoices: "Invoices", map: "Map", business: "Business setup",
   b_add: "Add", b_edit: "Edit", b_search: "Search…", b_address: "Address", b_none: "Nothing here yet.", b_total: "Total",
   b_confirmDelete: "Delete this item permanently?",
   // wizard
   wzTitle: "Set up your business", wzSub: "Choose what fits you. You can change everything later.",
-  wzName: "Business name", wzCurrency: "Currency", wzTax: "Default tax %", wzStart: "Start", wzSkip: "Skip (enable everything)",
+  wzName: "Business name", wzCurrency: "Currency", wzTax: "Default tax %", wzStart: "Start", wzSkip: "Skip (enable everything)", wzBack: "Back",
   type_shop: "Shop / store", type_contractor: "Contractor", type_company: "Company", type_tailor: "Tailoring workshop",
   type_social: "Social services", type_factory: "Factory / branches", type_freelancer: "Freelancer", type_custom: "Other / custom",
   // business page
@@ -47,11 +56,20 @@ const en = {
 };
 
 const ar = {
+inventory: "المخزون", inv_partial: "عربون مدفوع", inv_paidAmt: "المدفوع", inv_left: "المتبقي", inv_lowBody: "أصناف على وشك النفاد",
+  emp_probation: "تحت المراقبة", emp_level: "المستوى الوظيفي", lvl_manager: "مدير", lvl_head: "رئيس قسم", lvl_employee: "موظف عادي", lvl_subordinate: "مرؤوس",
+  emp_taxRate: "ضريبة الدخل %", emp_ss: "رقم الضمان الاجتماعي", emp_health: "التأمين الصحي (الجهة / الرقم)", emp_injury: "سجل إصابات العمل",
+  emp_sec_adj: "المكافآت والعمل الإضافي والسلف والعقوبات", adj_bonus: "مكافأة", adj_overtime: "عمل إضافي (أوفرتايم)", adj_advance: "سلفة من الراتب", adj_penalty: "عقوبة",
+  emp_total: "المجموع (الأساسي)", emp_tax: "ضريبة الدخل", emp_afterDed: "المجموع بعد الخصم", emp_net: "المجموع بعد المكافآت", emp_service: "مدة الخدمة",
+  stk_new: "صنف جديد", stk_name: "الصنف", stk_sku: "الرمز / الباركود", stk_unit: "الوحدة", stk_in: "الوارد (الموجود)", stk_out: "المصروف", stk_left: "الباقي",
+  stk_min: "نبّه عندما يصبح الباقي ≤", stk_cost: "سعر التكلفة", stk_price: "سعر البيع", stk_supplier: "المورّد", stk_loc: "الفرع / المستودع",
+  stk_ok: "متوفر", stk_low: "على وشك النفاد", stk_zero: "نفد", stk_value: "قيمة المخزون", stk_alert: "تنبيه النقص", stk_alertNone: "لا يوجد صنف على وشك النفاد.",
+  stk_addIn: "+ وارد", stk_addOut: "− صادر", stk_qty: "الكمية", stk_items: "صنف",
   employees: "الموظفون", invoices: "الفواتير", map: "الخريطة", business: "إعداد النشاط",
   b_add: "إضافة", b_edit: "تعديل", b_search: "بحث…", b_address: "العنوان", b_none: "لا يوجد شيء بعد.", b_total: "الإجمالي",
   b_confirmDelete: "حذف هذا العنصر نهائياً؟",
   wzTitle: "جهّز نشاطك", wzSub: "اختر ما يناسبك، ويمكنك تغيير كل شيء لاحقاً.",
-  wzName: "اسم النشاط", wzCurrency: "العملة", wzTax: "الضريبة الافتراضية %", wzStart: "ابدأ", wzSkip: "تخطَّ (تفعيل كل الأقسام)",
+  wzName: "اسم النشاط", wzCurrency: "العملة", wzTax: "الضريبة الافتراضية %", wzStart: "ابدأ", wzSkip: "تخطَّ (تفعيل كل الأقسام)", wzBack: "رجوع",
   type_shop: "متجر / محل", type_contractor: "مقاول", type_company: "شركة", type_tailor: "ورشة خياطة",
   type_social: "مؤسسة خدمات اجتماعية", type_factory: "مصنع / فروع متعددة", type_freelancer: "عمل حر", type_custom: "غير ذلك / مخصص",
   bzTitle: "إعداد النشاط", bzInfo: "بيانات النشاط", bzType: "نوع النشاط", bzApplyType: "تطبيق إعدادات النوع",

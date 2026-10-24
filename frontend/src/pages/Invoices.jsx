@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconInvoice, IconPlus, IconEdit, IconTrash, IconCheck } from "../components/Icons";
 import { F, Grid, ltr, useForm } from "../components/Form";
-import { useBiz, upsert, remove, nextNo, uid, totals, fmt, getDue, todayStr } from "../services/biz";
+import { useBiz, upsert, remove, nextNo, uid, totals, fmt, getDue, todayStr, paidOf, leftOf } from "../services/biz";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -24,7 +24,8 @@ th,td{border:1px solid #bbb;padding:7px 9px;text-align:start}th{background:#eee}
 <table><thead><tr><th>#</th><th>${t("inv_desc")}</th><th>${t("inv_qty")}</th><th>${t("inv_price")}</th><th>${t("b_total")}</th></tr></thead><tbody>${rows}</tbody></table>
 <div class="tot"><div><span>${t("inv_sub")}</span><span>${fmt(tt.sub)}</span></div>
 <div><span>${t("inv_discAmt")}</span><span>- ${fmt(tt.disc)}</span></div><div><span>${t("inv_taxAmt")}</span><span>${fmt(tt.tax)}</span></div>
-<div class="g"><span>${t("inv_total")}</span><span>${fmt(tt.total)} ${esc(inv.currency)}</span></div></div>
+<div class="g"><span>${t("inv_total")}</span><span>${fmt(tt.total)} ${esc(inv.currency)}</span></div>
+<div><span>${t("inv_paidAmt")}</span><span>${fmt(paidOf(inv))}</span></div><div><b>${t("inv_left")}</b><b>${fmt(leftOf(inv))}</b></div></div>
 <p>${esc(inv.notes)}</p><div class="sig"><span>${t("inv_signature")}</span><span>${t("inv_customer")}</span></div>
 <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script></body></html>`);
   w.document.close();
@@ -44,7 +45,7 @@ export default function Invoices() {
   const due = getDue(biz);
   const today = todayStr();
   const blank = (type) => ({
-    type, customer: "", issueDate: today, dueDate: "", currency: biz.currency, discount: 0, tax: biz.taxRate, notes: "",
+    type, customer: "", issueDate: today, dueDate: "", currency: biz.currency, discount: 0, tax: biz.taxRate, notes: "", paidAmount: "",
     status: type === "quote" ? "draft" : "unpaid", items: [{ desc: "", qty: 1, price: "" }],
   });
   const open = (x) => { setF(typeof x === "string" ? blank(x) : { ...x, items: x.items.map((i) => ({ ...i })) }); setModal(x); };
@@ -54,17 +55,24 @@ export default function Invoices() {
     e.preventDefault();
     const isNew = typeof modal === "string";
     const base = isNew ? { id: uid(), no: nextNo(f.type), createdAt: new Date().toISOString() } : modal;
-    upsert("invoices", { ...base, ...f, items: f.items.filter((i) => i.desc || i.price) });
+    const doc = { ...base, ...f, items: f.items.filter((i) => i.desc || i.price) };
+    if (doc.type === "invoice" && (doc.status === "unpaid" || doc.status === "partial" || doc.status === "paid")) {
+      const tot = totals(doc).total, p = Number(doc.paidAmount) || 0;
+      if (doc.status === "paid") doc.paidAmount = tot;
+      else doc.status = p <= 0 ? "unpaid" : p >= tot && tot > 0 ? "paid" : "partial";
+    }
+    upsert("invoices", doc);
     setModal(null);
   };
-  const markPaid = (x) => upsert("invoices", { ...x, status: "paid", paidAt: today });
+  const markPaid = (x) => upsert("invoices", { ...x, status: "paid", paidAmount: totals(x).total, paidAt: today });
   const toInvoice = (x) => upsert("invoices", { ...x, type: "invoice", no: nextNo("invoice"), status: "unpaid", issueDate: today });
 
-  const isOverdue = (x) => x.type === "invoice" && x.status === "unpaid" && x.dueDate && x.dueDate < today;
+  const isOverdue = (x) => x.type === "invoice" && (x.status === "unpaid" || x.status === "partial") && x.dueDate && x.dueDate < today;
   const dueIds = new Set(due.map((d) => d.inv.id));
   const list = useMemo(() => biz.invoices.filter((x) => filter === "all" || (filter === "due" ? dueIds.has(x.id) : x.type === filter)), [biz.invoices, filter, due.length]); // eslint-disable-line
-  const sum = (st) => biz.invoices.filter((x) => x.type === "invoice" && x.status === st).reduce((a, x) => a + totals(x).total, 0);
-  const stBadge = { draft: "", unpaid: "badge-violet", paid: "badge-green", cancelled: "badge-red" };
+  const inv = biz.invoices.filter((x) => x.type === "invoice" && x.status !== "cancelled" && x.status !== "draft");
+  const sum = (k) => inv.reduce((a, x) => a + (k === "paid" ? paidOf(x) : leftOf(x)), 0);
+  const stBadge = { draft: "", unpaid: "badge-violet", partial: "badge-blue", paid: "badge-green", cancelled: "badge-red" };
   const tt = modal ? totals(f.items ? f : { items: [] }) : null;
 
   return (
@@ -107,8 +115,11 @@ export default function Invoices() {
               </div>
               <div>{x.customer || "—"} <span style={{ color: "var(--text-3)" }}>· {x.dueDate || x.issueDate}</span></div>
               <div style={{ fontWeight: 700 }} dir="ltr">{fmt(totals(x).total)} {x.currency}</div>
+              {x.type === "invoice" && x.status !== "draft" && x.status !== "cancelled" && (
+                <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }} dir="ltr">{t("inv_paidAmt")}: {fmt(paidOf(x))} · <b style={{ color: leftOf(x) > 0 ? "var(--cyan)" : undefined }}>{t("inv_left")}: {fmt(leftOf(x))}</b></div>
+              )}
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                {x.type === "invoice" && x.status === "unpaid" && <button className="btn btn-ghost btn-sm" onClick={() => markPaid(x)}><IconCheck />{t("inv_markPaid")}</button>}
+                {x.type === "invoice" && (x.status === "unpaid" || x.status === "partial") && <button className="btn btn-ghost btn-sm" onClick={() => markPaid(x)}><IconCheck />{t("inv_markPaid")}</button>}
                 {x.type === "quote" && <button className="btn btn-ghost btn-sm" onClick={() => toInvoice(x)}>{t("inv_toInvoice")}</button>}
                 <button className="btn btn-ghost btn-sm" onClick={() => { if (!printDoc(x, biz, t, locale)) toast(t("inv_printHint"), "error"); }}>{t("inv_print")}</button>
                 <button className="icon-btn" aria-label={t("b_edit")} onClick={() => open(x)}><IconEdit /></button>
@@ -131,7 +142,7 @@ export default function Invoices() {
               <F label={t("inv_due")}><input className="input" type="date" value={f.dueDate} onChange={set("dueDate")} {...ltr} /></F>
               <F label={t("currency")}><input className="input" maxLength={5} value={f.currency} onChange={set("currency")} {...ltr} /></F>
               <F label={t("status")}><select className="select" value={f.status} onChange={set("status")}>
-                {["draft", "unpaid", "paid", "cancelled"].map((k) => <option key={k} value={k}>{t("inv_" + k)}</option>)}</select></F>
+                {["draft", "unpaid", "partial", "paid", "cancelled"].map((k) => <option key={k} value={k}>{t("inv_" + k)}</option>)}</select></F>
             </Grid>
             <h4 style={{ margin: "0.9rem 0 0.4rem" }}>{t("inv_items")}</h4>
             {f.items.map((it, n) => (
@@ -145,12 +156,14 @@ export default function Invoices() {
             ))}
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setF((p) => ({ ...p, items: [...p.items, { desc: "", qty: 1, price: "" }] }))}><IconPlus />{t("inv_addItem")}</button>
             <Grid>
+              <F label={t("inv_paidAmt")}><input className="input" type="number" min="0" step="any" value={f.paidAmount} onChange={set("paidAmount")} {...ltr} /></F>
               <F label={t("inv_discount")}><input className="input" type="number" min="0" max="100" step="any" value={f.discount} onChange={set("discount")} {...ltr} /></F>
               <F label={t("inv_tax")}><input className="input" type="number" min="0" max="100" step="any" value={f.tax} onChange={set("tax")} {...ltr} /></F>
             </Grid>
             <div className="glass card" style={{ fontSize: "var(--text-sm)" }} dir="ltr">
               <div>{t("inv_sub")}: {fmt(tt.sub)}</div><div>{t("inv_discAmt")}: -{fmt(tt.disc)}</div><div>{t("inv_taxAmt")}: {fmt(tt.tax)}</div>
               <div style={{ fontWeight: 700, fontSize: "1.05rem" }}>{t("inv_total")}: {fmt(tt.total)} {f.currency}</div>
+              <div>{t("inv_paidAmt")}: {fmt(Math.min(Number(f.paidAmount) || 0, tt.total))} · {t("inv_left")}: {fmt(Math.max(tt.total - (Number(f.paidAmount) || 0), 0))}</div>
             </div>
             <F label={t("inv_notes")}><textarea className="textarea" rows={2} value={f.notes} onChange={set("notes")} /></F>
             <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end" }}>
