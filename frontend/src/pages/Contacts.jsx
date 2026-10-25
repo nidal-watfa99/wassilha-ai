@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../services/api";
 import { useApp } from "../context/AppContext";
@@ -13,6 +13,10 @@ export default function Contacts() {
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState(null);
   const [q, setQ] = useState("");
+  const [qInput, setQInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const seq = useRef(0);
+  const fx = useRef({}); fx.current = { toast, tError };
   const [sort, setSort] = useState("name");
   const [editing, setEditing] = useState(null); // null | "new" | contact
   const [form, setForm] = useState(EMPTY_FORM);
@@ -22,10 +26,16 @@ export default function Contacts() {
   const [detailConvs, setDetailConvs] = useState(null);
 
   const load = useCallback(() => {
+    const n = ++seq.current;            // ignore answers to outdated searches
+    setBusy(true); setError(null);
     api.get(`/contacts?q=${encodeURIComponent(q)}&sort=${sort}`)
-      .then((d) => setItems(d.items))
-      .catch((e) => { setError(e); toast(tError(e), "error"); });
-  }, [q, sort, toast, tError]);
+      .then((d) => { if (n === seq.current) setItems(d.items); })
+      .catch((e) => { if (n === seq.current) { setError(e); setItems((p) => p ?? []); fx.current.toast(fx.current.tError(e), "error"); } })
+      .finally(() => { if (n === seq.current) setBusy(false); });
+  }, [q, sort]);
+
+  // short delay while typing: one request per pause, not one per letter
+  useEffect(() => { const id = setTimeout(() => setQ(qInput.trim()), 300); return () => clearTimeout(id); }, [qInput]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -81,12 +91,15 @@ export default function Contacts() {
   return (
     <div>
       <div style={{ display: "flex", gap: "0.7rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
+        <form onSubmit={(e) => { e.preventDefault(); setQ(qInput.trim()); }} style={{ position: "relative", flex: 1, minWidth: "200px", display: "flex", gap: "0.4rem" }}>
+        <div style={{ position: "relative", flex: 1 }}>
           <IconSearch style={{ position: "absolute", insetInlineStart: "0.8rem", top: "0.9rem", width: 18, height: 18, color: "var(--text-3)" }} />
           <input className="input" style={{ paddingInlineStart: "2.4rem" }}
-                 placeholder={t("searchContacts")} value={q}
-                 onChange={(e) => setQ(e.target.value)} aria-label={t("searchContacts")} />
+                 placeholder={t("searchContacts")} value={qInput} type="search" inputMode="search"
+                 onChange={(e) => setQInput(e.target.value)} aria-label={t("searchContacts")} />
         </div>
+        <button className="btn btn-ghost btn-sm" type="submit" aria-label={t("b_search")}>{busy ? "…" : "🔍"}</button>
+      </form>
         <select className="select" style={{ width: "auto" }} value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t("sort") || "sort"}>
           <option value="name">{t("name")}</option>
           <option value="created_at">{t("created")}</option>
@@ -97,6 +110,11 @@ export default function Contacts() {
         </button>
       </div>
 
+      {error && (
+        <div className="glass card" style={{ borderColor: "rgba(255,107,129,.5)", marginBottom: "0.8rem", display: "flex", justifyContent: "space-between", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
+          <span>{tError(error)}</span><button className="btn btn-ghost btn-sm" onClick={load}>{t("b_retry")}</button>
+        </div>
+      )}
       <div className="glass">
         {items === null ? (
           <div style={{ display: "grid", placeItems: "center", padding: "2.5rem" }}><Spinner /></div>

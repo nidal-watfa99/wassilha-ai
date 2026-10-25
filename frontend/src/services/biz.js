@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 export const KEY = "wassilha_biz_v1";
-export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory", "catalog", "expenses", "reports"];
+export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory", "catalog", "expenses", "reports", "aimodels"];
 
 const PRESETS = {
   shop: ["contacts", "products", "catalog", "inventory", "expenses", "reports", "invoices", "employees", "map", "tasks", "documents", "insights", "calculator", "ai"],
@@ -70,7 +70,7 @@ export function nextNo(kind) {
 
 export function applyPreset(type, locale, { name, currency, taxRate }) {
   const on = PRESETS[type] || MODULES;
-  const modules = Object.fromEntries(MODULES.map((m) => [m, on.includes(m)]));
+  const modules = Object.fromEntries(MODULES.map((m) => [m, on.includes(m) || m === "aimodels"]));
   const tr = (TERMS[type] || TERMS.custom)[locale === "ar" ? "ar" : "en"];
   update((s) => ({
     ...s, configured: true, type, name, currency: currency || "USD", taxRate: Number(taxRate) || 0,

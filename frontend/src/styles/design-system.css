@@ -726,3 +726,16 @@ table.data tr:hover td { background: rgba(21, 30, 44, 0.35); }
 /* ---------- Stage 1: map ---------- */
 .map-box { height: 55dvh; min-height: 320px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border-strong); position: relative; z-index: 0; isolation: isolate; }
 .leaflet-container { font-family: inherit; }
+
+/* ---------- calculation statements ---------- */
+.sum { border: 1px solid var(--border-strong); border-radius: 14px; overflow: hidden; background: rgba(255,255,255,.03); font-size: var(--text-sm); }
+.sum-head { padding: .45rem .9rem; font-size: var(--text-xs); color: var(--text-3); background: rgba(255,255,255,.05); letter-spacing: .03em; }
+.sum-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .55rem .9rem; border-top: 1px solid var(--border); }
+.sum-row:first-child { border-top: 0; }
+.sum-row .num, .sum-total .num { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.sum-row.minus .num { color: #ff8a9b; } .sum-row.plus .num { color: #4ade80; } .sum-row.muted { color: var(--text-3); }
+.sum-row.sub { background: rgba(255,255,255,.05); font-weight: 700; }
+.sum-total { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .85rem .9rem; font-weight: 800; font-size: 1.08rem; background: linear-gradient(135deg, rgba(54,139,255,.30), rgba(103,232,249,.14)); }
+.mini3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+.mini3 > div { border: 1px solid var(--border); border-radius: 10px; padding: .4rem .6rem; background: rgba(255,255,255,.03); display: grid; gap: 2px; }
+.mini3 small { color: var(--text-3); font-size: var(--text-xs); } .mini3 b { font-variant-numeric: tabular-nums; }

@@ -10,12 +10,14 @@ export const PROVIDERS = {
   groq: { name: "GroqCloud", portal: "https://console.groq.com/keys", model: "llama-3.3-70b-versatile" },
   cerebras: { name: "Cerebras", portal: "https://inference.cerebras.ai/", model: "llama-3.3-70b" },
   openrouter: { name: "OpenRouter", portal: "https://openrouter.ai/keys", model: "meta-llama/llama-3.3-70b-instruct:free" },
+  xai: { name: "xAI Grok", portal: "https://console.x.ai", model: "" },
 };
 
 const OPENAI_COMPAT = {
   groq: "https://api.groq.com/openai/v1",
   cerebras: "https://api.cerebras.ai/v1",
   openrouter: "https://openrouter.ai/api/v1",
+  xai: "https://api.x.ai/v1",
 };
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -24,6 +26,7 @@ const PREFERRED = {
   groq: [/llama-3\.3-70b/, /llama-3\.1-8b/, /llama/, /./],
   cerebras: [/llama-3\.3-70b/, /llama3\.1-8b/, /llama/, /./],
   openrouter: [/llama-3\.3-70b-instruct:free/, /:free$/],
+  xai: [/grok-.*mini/, /grok/, /./],
 };
 
 export function getAiConfig() {
@@ -76,6 +79,7 @@ export async function listModels(provider, apiKey) {
   const d = await request(`${OPENAI_COMPAT[provider]}/models`, { headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {} });
   let list = (d?.data || []).map((m) => ({ id: m.id, name: m.name || m.id }));
   if (provider === "groq") list = list.filter((m) => !/whisper|guard|tts|playai/i.test(m.id));
+  if (provider === "xai") list = list.filter((m) => !/image|imagine|vision|embed/i.test(m.id));
   if (provider === "openrouter") list = list.filter((m) => /:free$/.test(m.id)).slice(0, 30);
   return list;
 }

@@ -3,12 +3,15 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import { F, Grid, ltr, useForm } from "../components/Form";
+import UnitPicker from "../components/UnitPicker";
+import { unitLabel, compatible, convert } from "../services/units";
 import { useBiz, upsert, remove, uid, fmt, stockLeft, getLow } from "../services/biz";
 
 const BLANK = { name: "", sku: "", unit: "", qtyIn: "", qtyOut: "", minQty: "", cost: "", price: "", supplier: "", location: "", notes: "" };
 
 export default function Inventory() {
-  const { t, toast } = useApp();
+  const { t, toast, locale } = useApp();
+  const [qu, setQu] = useState({});
   const biz = useBiz();
   const [q, setQ] = useState("");
   const [modal, setModal] = useState(null);
@@ -24,8 +27,10 @@ export default function Inventory() {
     setModal(null);
   };
   const move = (x, dir) => {
-    const n = Number(qty[x.id]);
+    let n = Number(qty[x.id]);
     if (!(n > 0)) return;
+    const from = qu[x.id] || x.unit;
+    if (x.unit && from !== x.unit) { n = convert(n, from, x.unit); if (n == null) return toast(t("unit_incompat"), "error"); }
     upsert("inventory", { ...x, [dir === "in" ? "qtyIn" : "qtyOut"]: (Number(dir === "in" ? x.qtyIn : x.qtyOut) || 0) + n });
     setQty((p) => ({ ...p, [x.id]: "" }));
   };
@@ -70,11 +75,12 @@ export default function Inventory() {
               <span className={`badge ${left <= 0 ? "badge-red" : isLow ? "badge-violet" : "badge-green"}`}>{t(left <= 0 ? "stk_zero" : isLow ? "stk_low" : "stk_ok")}</span>
             </div>
             <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }} dir="auto">
-              {t("stk_in")}: {Number(x.qtyIn) || 0} · {t("stk_out")}: {Number(x.qtyOut) || 0} · <b>{t("stk_left")}: {left} {x.unit}</b>
+              {t("stk_in")}: {Number(x.qtyIn) || 0} · {t("stk_out")}: {Number(x.qtyOut) || 0} · <b>{t("stk_left")}: {+left.toFixed(6)} {unitLabel(x.unit, locale)}</b>
               {x.location && ` · ${x.location}`}
             </div>
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
               <input className="input" style={{ width: 90 }} type="number" min="0" step="any" placeholder={t("stk_qty")} value={qty[x.id] || ""} onChange={(e) => setQty((p) => ({ ...p, [x.id]: e.target.value }))} {...ltr} />
+              {compatible(x.unit).length > 1 && <select className="select" style={{ width: "auto" }} aria-label={t("stk_unit")} value={qu[x.id] || x.unit} onChange={(e) => setQu((p) => ({ ...p, [x.id]: e.target.value }))}>{compatible(x.unit).map((c) => <option key={c} value={c}>{unitLabel(c, locale)}</option>)}</select>}
               <button className="btn btn-ghost btn-sm" onClick={() => move(x, "in")}>{t("stk_addIn")}</button>
               <button className="btn btn-ghost btn-sm" onClick={() => move(x, "out")}>{t("stk_addOut")}</button>
               <button className="icon-btn" aria-label={t("b_edit")} onClick={() => open(x)}><IconEdit /></button>
@@ -89,7 +95,7 @@ export default function Inventory() {
             <Grid>
               <F label={t("stk_name") + " *"} wide><input className="input" required value={f.name} onChange={set("name")} /></F>
               <F label={t("stk_sku")}><input className="input" value={f.sku} onChange={set("sku")} {...ltr} /></F>
-              <F label={t("stk_unit")}><input className="input" value={f.unit} onChange={set("unit")} /></F>
+              <F label={t("stk_unit")}><UnitPicker value={f.unit} onChange={(v) => setF((p) => ({ ...p, unit: v }))} /></F>
               <F label={t("stk_in")}><input className="input" type="number" min="0" step="any" value={f.qtyIn} onChange={set("qtyIn")} {...ltr} /></F>
               <F label={t("stk_out")}><input className="input" type="number" min="0" step="any" value={f.qtyOut} onChange={set("qtyOut")} {...ltr} /></F>
               <F label={t("stk_min")}><input className="input" type="number" min="0" step="any" value={f.minQty} onChange={set("minQty")} {...ltr} /></F>

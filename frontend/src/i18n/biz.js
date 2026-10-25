@@ -1,5 +1,14 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+aimodels: "AI models", ai_sub: "One card per provider. Keys stay in this browser only.", ai_default: "Default", ai_setDefault: "Make default", ai_key: "API key", ai_show: "Show (8 s)", ai_copy: "Copy",
+  ai_save: "Save key", ai_replace: "Replace", ai_remove: "Delete key", ai_test: "Test connection", ai_testing: "Testing…", ai_model: "Model", ai_getKey: "Get a key", ai_lastTest: "Last test",
+  ai_s_ok: "Connected", ai_s_none: "Not configured", ai_s_fail: "Connection failed", ai_s_untested: "Saved, not tested",
+  ai_err_invalid_key: "The key is invalid or lacks permission.", ai_err_quota: "Rate or quota limit reached. Try later.", ai_err_network: "Provider unreachable (network or browser restriction).", ai_err_service: "The provider returned an error.",
+  ai_caps: "Supported here: text chat and analysis. Images and audio are not implemented yet.", ai_free: "Free tier available (limits apply)", ai_paid: "Usually pay-per-use — check the provider's pricing",
+  ai_untestedNote: "Added but never verified — a successful test is required before use.", ai_secNote: "Local mode: the key lives in this browser. For real production use, keep it on a server (planned).",
+  ai_models: "models found", ai_removed: "Key deleted.", ai_saved: "Key saved.", ai_copied: "Copied",
+  b_retry: "Retry", unit_incompat: "These units cannot be converted into each other.",
+  b_retry: "Retry", unit_incompat: "These units cannot be converted into each other.",
   cur_other: "Other (type it manually)",
 expenses: "Expenses", reports: "Reports", exp_new: "New expense", exp_date: "Date", exp_cat: "Category", exp_method: "Payment method", exp_payee: "Paid to / vendor", exp_repeat: "Repeat next month",
   exp_rent: "Rent", exp_salaries: "Salaries", exp_purchases: "Purchases / materials", exp_utilities: "Utilities", exp_transport: "Transport", exp_marketing: "Marketing", exp_maintenance: "Maintenance", exp_taxes: "Taxes & fees", exp_other: "Other",
@@ -72,6 +81,15 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+aimodels: "نماذج الذكاء الاصطناعي", ai_sub: "بطاقة لكل مزوّد. المفاتيح تبقى في هذا المتصفح فقط.", ai_default: "الافتراضي", ai_setDefault: "اجعله الافتراضي", ai_key: "مفتاح API", ai_show: "إظهار (8 ثوانٍ)", ai_copy: "نسخ",
+  ai_save: "حفظ المفتاح", ai_replace: "استبدال", ai_remove: "حذف المفتاح", ai_test: "اختبار الاتصال", ai_testing: "جارٍ الاختبار…", ai_model: "النموذج", ai_getKey: "الحصول على مفتاح", ai_lastTest: "آخر اختبار",
+  ai_s_ok: "متصل", ai_s_none: "غير مُعدّ", ai_s_fail: "فشل الاتصال", ai_s_untested: "محفوظ ولم يُختبر",
+  ai_err_invalid_key: "المفتاح غير صالح أو لا يملك الصلاحية.", ai_err_quota: "بلغت حد الاستخدام أو الحصة. حاول لاحقاً.", ai_err_network: "تعذّر الوصول للمزوّد (الشبكة أو قيد من المتصفح).", ai_err_service: "أعاد المزوّد خطأً.",
+  ai_caps: "المدعوم هنا: المحادثة النصية والتحليل. الصور والصوت غير منفّذة بعد.", ai_free: "تتوفر طبقة مجانية (بحدود)", ai_paid: "غالباً بالدفع حسب الاستهلاك — راجع أسعار المزوّد",
+  ai_untestedNote: "أُضيف ولم يُتحقق منه — لا بد من اختبار ناجح قبل الاستخدام.", ai_secNote: "الوضع المحلي: المفتاح محفوظ في هذا المتصفح. للإنتاج الحقيقي يُحفظ في خادم (مخطط له).",
+  ai_models: "نموذجاً", ai_removed: "حُذف المفتاح.", ai_saved: "حُفظ المفتاح.", ai_copied: "تم النسخ",
+  b_retry: "إعادة المحاولة", unit_incompat: "لا يمكن التحويل بين هاتين الوحدتين.",
+  b_retry: "إعادة المحاولة", unit_incompat: "لا يمكن التحويل بين هاتين الوحدتين.",
   cur_other: "أخرى (اكتب يدوياً)",
 expenses: "المصروفات", reports: "التقارير", exp_new: "مصروف جديد", exp_date: "التاريخ", exp_cat: "البند", exp_method: "طريقة الدفع", exp_payee: "المدفوع له / المورّد", exp_repeat: "تكرار في الشهر القادم",
   exp_rent: "إيجار", exp_salaries: "رواتب", exp_purchases: "مشتريات / مواد", exp_utilities: "كهرباء وماء واتصالات", exp_transport: "نقل", exp_marketing: "دعاية وتسويق", exp_maintenance: "صيانة", exp_taxes: "ضرائب ورسوم", exp_other: "أخرى",

@@ -186,9 +186,9 @@ async function route(method, path, body, query) {
     const FIELDS = ["name", "email", "phone", "company", "notes"];
     const out = (c) => pick(c, ["id", ...FIELDS, "created_at", "updated_at"]);
     if (!id && method === "GET") {
-      const q = (query.get("q") || "").toLowerCase();
+      const q = (query.get("q") || "").trim().toLowerCase(), qd = q.replace(/\D/g, "");
       const sort = ["name", "created_at", "updated_at"].includes(query.get("sort")) ? query.get("sort") : "name";
-      let rows = own(db, "contacts", user).filter((c) => !q || [c.name, c.email, c.phone, c.company].some((x) => (x || "").toLowerCase().includes(q)));
+      let rows = own(db, "contacts", user).filter((c) => !q || [c.name, c.email, c.phone, c.company].some((x) => (x || "").toLowerCase().includes(q)) || (qd.length >= 3 && String(c.phone || "").replace(/\D/g, "").includes(qd)));
       rows = rows.sort((a, b) => String(a[sort]).localeCompare(String(b[sort]), "ar"));
       return ok({ items: rows.map(out) });
     }

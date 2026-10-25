@@ -5,6 +5,8 @@ import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconInvoice, IconPlus, IconEdit, IconTrash, IconCheck } from "../components/Icons";
 import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, ltr, useForm } from "../components/Form";
+import Summary from "../components/Summary";
+import { unitLabel, UNITS } from "../services/units";
 import { useBiz, upsert, remove, nextNo, uid, totals, fmt, getDue, todayStr, paidOf, leftOf } from "../services/biz";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -12,7 +14,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 function printDoc(inv, biz, t, locale) {
   const tt = totals(inv);
   const dir = locale === "ar" ? "rtl" : "ltr";
-  const rows = inv.items.map((i, n) => `<tr><td>${n + 1}</td><td>${esc(i.desc)}</td><td>${esc(i.qty)}</td><td>${fmt(i.price)}</td><td>${fmt((i.qty || 0) * (i.price || 0))}</td></tr>`).join("");
+  const rows = inv.items.map((i, n) => `<tr><td>${n + 1}</td><td>${esc(i.desc)}</td><td>${esc(i.qty)} ${esc(unitLabel(i.unit, locale))}</td><td>${fmt(i.price)}</td><td>${fmt((i.qty || 0) * (i.price || 0))}</td></tr>`).join("");
   const w = window.open("", "_blank");
   if (!w) return false;
   w.document.write(`<!doctype html><html dir="${dir}" lang="${locale}"><head><meta charset="utf-8"><title>${esc(inv.no)}</title>
@@ -47,7 +49,7 @@ export default function Invoices() {
   const today = todayStr();
   const blank = (type) => ({
     type, customer: "", issueDate: today, dueDate: "", currency: biz.currency, discount: 0, tax: biz.taxRate, notes: "", paidAmount: "",
-    status: type === "quote" ? "draft" : "unpaid", items: [{ desc: "", qty: 1, price: "" }],
+    status: type === "quote" ? "draft" : "unpaid", items: [{ desc: "", qty: 1, price: "", unit: "" }],
   });
   const open = (x) => { setF(typeof x === "string" ? blank(x) : { ...x, items: x.items.map((i) => ({ ...i })) }); setModal(x); };
   const setItem = (n, k, v) => setF((p) => ({ ...p, items: p.items.map((it, i) => (i === n ? { ...it, [k]: v } : it)) }));
@@ -115,10 +117,13 @@ export default function Invoices() {
                 </span>
               </div>
               <div>{x.customer || "—"} <span style={{ color: "var(--text-3)" }}>· {x.dueDate || x.issueDate}</span></div>
-              <div style={{ fontWeight: 700 }} dir="ltr">{fmt(totals(x).total)} {x.currency}</div>
-              {x.type === "invoice" && x.status !== "draft" && x.status !== "cancelled" && (
-                <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }} dir="ltr">{t("inv_paidAmt")}: {fmt(paidOf(x))} · <b style={{ color: leftOf(x) > 0 ? "var(--cyan)" : undefined }}>{t("inv_left")}: {fmt(leftOf(x))}</b></div>
-              )}
+              {x.type === "invoice" && x.status !== "draft" && x.status !== "cancelled" ? (
+                <div className="mini3">
+                  {[[t("inv_total"), totals(x).total], [t("inv_paidAmt"), paidOf(x)], [t("inv_left"), leftOf(x)]].map(([l, v], k) => (
+                    <div key={k}><small>{l}</small><b dir="ltr" style={k === 2 && v > 0 ? { color: "var(--cyan)" } : undefined}>{fmt(v)} <small>{x.currency}</small></b></div>
+                  ))}
+                </div>
+              ) : <div style={{ fontWeight: 700 }}><bdi dir="ltr">{fmt(totals(x).total)} {x.currency}</bdi></div>}
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                 {x.type === "invoice" && (x.status === "unpaid" || x.status === "partial") && <button className="btn btn-ghost btn-sm" onClick={() => markPaid(x)}><IconCheck />{t("inv_markPaid")}</button>}
                 {x.type === "quote" && <button className="btn btn-ghost btn-sm" onClick={() => toInvoice(x)}>{t("inv_toInvoice")}</button>}
@@ -147,24 +152,24 @@ export default function Invoices() {
             </Grid>
             <h4 style={{ margin: "0.9rem 0 0.4rem" }}>{t("inv_items")}</h4>
             {f.items.map((it, n) => (
-              <div key={n} style={{ display: "grid", gridTemplateColumns: "1fr 70px 90px 36px", gap: "0.4rem", marginBottom: "0.4rem" }}>
+              <div key={n} style={{ display: "grid", gridTemplateColumns: "1fr 62px 86px 86px 36px", gap: "0.4rem", marginBottom: "0.4rem" }}>
                 <input className="input" placeholder={t("inv_desc")} value={it.desc} onChange={(e) => setItem(n, "desc", e.target.value)} />
                 <input className="input" type="number" min="0" step="any" placeholder={t("inv_qty")} value={it.qty} onChange={(e) => setItem(n, "qty", e.target.value)} {...ltr} />
+                <select className="select" aria-label={t("stk_unit")} value={it.unit || ""} onChange={(e) => setItem(n, "unit", e.target.value)}><option value="">—</option>{Object.keys(UNITS).map((c) => <option key={c} value={c}>{unitLabel(c, locale)}</option>)}</select>
                 <input className="input" type="number" min="0" step="any" placeholder={t("inv_price")} value={it.price} onChange={(e) => setItem(n, "price", e.target.value)} {...ltr} />
                 <button type="button" className="icon-btn" aria-label={t("delete")} disabled={f.items.length < 2}
                         onClick={() => setF((p) => ({ ...p, items: p.items.filter((_, i) => i !== n) }))}><IconTrash /></button>
               </div>
             ))}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setF((p) => ({ ...p, items: [...p.items, { desc: "", qty: 1, price: "" }] }))}><IconPlus />{t("inv_addItem")}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setF((p) => ({ ...p, items: [...p.items, { desc: "", qty: 1, price: "", unit: "" }] }))}><IconPlus />{t("inv_addItem")}</button>
             <Grid>
               <F label={t("inv_paidAmt")}><input className="input" type="number" min="0" step="any" value={f.paidAmount} onChange={set("paidAmount")} {...ltr} /></F>
               <F label={t("inv_discount")}><input className="input" type="number" min="0" max="100" step="any" value={f.discount} onChange={set("discount")} {...ltr} /></F>
               <F label={t("inv_tax")}><input className="input" type="number" min="0" max="100" step="any" value={f.tax} onChange={set("tax")} {...ltr} /></F>
             </Grid>
-            <div className="glass card" style={{ fontSize: "var(--text-sm)" }} dir="ltr">
-              <div>{t("inv_sub")}: {fmt(tt.sub)}</div><div>{t("inv_discAmt")}: -{fmt(tt.disc)}</div><div>{t("inv_taxAmt")}: {fmt(tt.tax)}</div>
-              <div style={{ fontWeight: 700, fontSize: "1.05rem" }}>{t("inv_total")}: {fmt(tt.total)} {f.currency}</div>
-              <div>{t("inv_paidAmt")}: {fmt(Math.min(Number(f.paidAmount) || 0, tt.total))} · {t("inv_left")}: {fmt(Math.max(tt.total - (Number(f.paidAmount) || 0), 0))}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "0.7rem", margin: "0.6rem 0" }}>
+              <Summary cur={f.currency} rows={[{ label: t("inv_sub"), value: tt.sub, sub: true }, { label: t("inv_discAmt"), value: tt.disc, tone: "minus" }, { label: t("inv_taxAmt"), value: tt.tax, tone: "plus" }]} total={{ label: t("inv_total"), value: tt.total }} />
+              {f.type === "invoice" && <Summary cur={f.currency} rows={[{ label: t("inv_total"), value: tt.total }, { label: t("inv_paidAmt"), value: Math.min(Number(f.paidAmount) || 0, tt.total), tone: "minus" }]} total={{ label: t("inv_left"), value: Math.max(tt.total - (Number(f.paidAmount) || 0), 0) }} />}
             </div>
             <F label={t("inv_notes")}><textarea className="textarea" rows={2} value={f.notes} onChange={set("notes")} /></F>
             <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end" }}>

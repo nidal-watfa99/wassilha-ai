@@ -7,6 +7,9 @@ import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
 import { useBiz, upsert, remove, uid, fmt, nextNo, todayStr, stockLeft } from "../services/biz";
+import Summary from "../components/Summary";
+import UnitPicker from "../components/UnitPicker";
+import { unitLabel } from "../services/units";
 import { putMedia, getMedia, delMedia, compressImage } from "../services/media";
 
 const BLANK = {
@@ -35,7 +38,7 @@ function Media({ id, type, style }) {
 }
 
 export default function Catalog() {
-  const { t, toast } = useApp();
+  const { t, toast, locale } = useApp();
   const biz = useBiz();
   const nav = useNavigate();
   const [q, setQ] = useState(""), [cat, setCat] = useState(""), [tab, setTab] = useState("all");
@@ -112,7 +115,7 @@ export default function Catalog() {
                      : <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", background: "rgba(255,255,255,.04)", borderRadius: 10 }}><IconBox /></div>}
                 <strong style={{ fontSize: "var(--text-sm)" }}>{p.featured && "⭐ "}{p.name}</strong>
                 <div dir="ltr" style={{ textAlign: "start" }}>
-                  {x.offer && <s style={{ color: "var(--text-3)", marginInlineEnd: 6 }}>{fmt(x.base)}</s>}<b>{fmt(x.now)} {p.currency || biz.currency}</b>
+                  {x.offer && <s style={{ color: "var(--text-3)", marginInlineEnd: 6 }}>{fmt(x.base)}</s>}<b>{fmt(x.now)} {p.currency || biz.currency}</b>{p.unit && <span style={{ color: "var(--text-3)" }}> / {unitLabel(p.unit, locale)}</span>}
                 </div>
                 <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
                   {x.offer && <span className="badge badge-red">{p.offerLabel || t("cat_offer")}</span>}
@@ -135,7 +138,7 @@ export default function Catalog() {
               <F label={t("stk_sku")}><input className="input" value={f.sku} onChange={set("sku")} {...ltr} /></F>
               <F label={t("cat_category")}><input className="input" list="cats" value={f.category} onChange={set("category")} /><datalist id="cats">{cats.map((c) => <option key={c} value={c} />)}</datalist></F>
               <F label={t("cat_brand")}><input className="input" value={f.brand} onChange={set("brand")} /></F>
-              <F label={t("stk_unit")}><input className="input" value={f.unit} onChange={set("unit")} /></F>
+              <F label={t("stk_unit")}><UnitPicker value={f.unit} onChange={(v) => setF((p) => ({ ...p, unit: v }))} /></F>
               <F label={t("emp_status")}><select className="select" value={f.status} onChange={set("status")}>{ST.map((k) => <option key={k} value={k}>{t("cat_st_" + k)}</option>)}</select></F>
               <F label={t("cat_featured")}><select className="select" value={f.featured ? "1" : ""} onChange={(e) => setF((p) => ({ ...p, featured: !!e.target.value }))}><option value="">—</option><option value="1">⭐</option></select></F>
               <F label={t("cat_desc")} wide><textarea className="textarea" rows={3} value={f.description} onChange={set("description")} /></F>
@@ -157,10 +160,14 @@ export default function Catalog() {
               <F label={t("cat_from")}><input className="input" type="date" value={f.offerFrom} onChange={set("offerFrom")} {...ltr} /></F>
               <F label={t("cat_to")}><input className="input" type="date" value={f.offerTo} onChange={set("offerTo")} {...ltr} /></F>
             </Grid>
-            <div className="glass card" dir="ltr" style={{ fontSize: "var(--text-sm)" }}>
-              {t("cat_priceNow")}: <b>{fmt(pr.now)} {f.currency || biz.currency}</b>{pr.offer ? " ✓ " + t("cat_offer") : ""}
-              {Number(f.cost) > 0 && ` · ${t("cat_margin")}: ${fmt(pr.now - Number(f.cost))} (${fmt(((pr.now - Number(f.cost)) / (pr.now || 1)) * 100)}%)`}
-            </div>
+            <div style={{ margin: "0.6rem 0" }}><Summary cur={f.currency || biz.currency} rows={[
+              { label: t("stk_price"), value: pr.base, sub: true },
+              pr.offer && { label: f.offerLabel || t("cat_offer"), value: pr.base - pr.now, tone: "minus" },
+            ]} total={{ label: t("cat_priceNow"), value: pr.now }} />
+              {Number(f.cost) > 0 && <div style={{ marginTop: "0.6rem" }}><Summary cur={f.currency || biz.currency} rows={[
+                { label: t("cat_priceNow"), value: pr.now }, { label: t("stk_cost"), value: Number(f.cost), tone: "minus" },
+                { label: "%", text: `${fmt(((pr.now - Number(f.cost)) / (pr.now || 1)) * 100)}%`, tone: "muted" },
+              ]} total={{ label: t("cat_margin"), value: pr.now - Number(f.cost) }} /></div>}</div>
             <Sec>{t("inventory")}</Sec>
             <F label={t("cat_linkStock")}><select className="select" value={f.invId} onChange={set("invId")}><option value="">—</option>{biz.inventory.map((i) => <option key={i.id} value={i.id}>{i.name} ({stockLeft(i)})</option>)}</select></F>
             {invItem && <div style={{ fontSize: "var(--text-sm)" }}>{t("stk_left")}: <b>{stockLeft(invItem)} {invItem.unit}</b></div>}

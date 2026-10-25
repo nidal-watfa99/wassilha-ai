@@ -25,6 +25,7 @@ import Inventory from "./pages/Inventory";
 import Catalog from "./pages/Catalog";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
+import AiModels from "./pages/AiModels";
 
 function PrivateRoute({ children }) {
   const { user, authChecked } = useApp();
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="employees" element={<Employees />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="expenses" element={<Expenses />} />
+          <Route path="ai-models" element={<AiModels />} />
           <Route path="reports" element={<Reports />} />
           <Route path="catalog" element={<Catalog />} />
           <Route path="inventory" element={<Inventory />} />

@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconUsers, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import CurrencyPicker from "../components/CurrencyPicker";
+import Summary from "../components/Summary";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
 import { useBiz, upsert, remove, nextNo, uid, fmt, payroll, service, todayStr } from "../services/biz";
 
@@ -158,14 +159,13 @@ export default function Employees() {
                   <button type="button" className="icon-btn" aria-label={t("delete")} onClick={() => setF((p) => ({ ...p, adj: p.adj.filter((x) => x.id !== a.id) }))}><IconTrash /></button></span>
               </div>
             ))}
-            <div className="glass card" style={{ fontSize: "var(--text-sm)", marginTop: "0.5rem" }} dir="ltr">
-              <div>{t("emp_total")}: {fmt(pr.base)}</div>
-              <div>− {t("adj_advance")}: {fmt(pr.adv)} · − {t("adj_penalty")}: {fmt(pr.pen)} · − {t("emp_tax")}: {fmt(pr.tax)}</div>
-              <div><b>{t("emp_afterDed")}: {fmt(pr.afterDed)}</b></div>
-              <div>+ {t("adj_bonus")} / {t("adj_overtime")}: {fmt(pr.bonus)}</div>
-              <div style={{ fontWeight: 700, fontSize: "1.05rem" }}>{t("emp_net")}: {fmt(pr.net)} {f.currency}</div>
-              {f.hireDate && <div>{t("emp_service")}: {service(f)}</div>}
-            </div>
+            <div style={{ marginTop: "0.6rem" }}><Summary cur={f.currency} rows={[
+              { label: t("emp_total"), value: pr.base, sub: true },
+              { label: t("adj_advance"), value: pr.adv, tone: "minus" }, { label: t("adj_penalty"), value: pr.pen, tone: "minus" }, { label: t("emp_tax"), value: pr.tax, tone: "minus" },
+              { label: t("emp_afterDed"), value: pr.afterDed, sub: true },
+              { label: `${t("adj_bonus")} / ${t("adj_overtime")}`, value: pr.bonus, tone: "plus" },
+              f.hireDate && { label: t("emp_service"), text: service(f), tone: "muted" },
+            ]} total={{ label: t("emp_net"), value: pr.net }} /></div>
             <Sec>{t("emp_sec_more")}</Sec>
             <F label={t("emp_skills")}><textarea className="textarea" rows={2} value={f.skills} onChange={set("skills")} /></F>
             <F label={t("emp_notes")}><textarea className="textarea" rows={2} value={f.notes} onChange={set("notes")} /></F>
