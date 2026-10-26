@@ -1,5 +1,6 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+  emp_deductions: "Deductions",
 aimodels: "AI models", ai_sub: "One card per provider. Keys stay in this browser only.", ai_default: "Default", ai_setDefault: "Make default", ai_key: "API key", ai_show: "Show (8 s)", ai_copy: "Copy",
   ai_save: "Save key", ai_replace: "Replace", ai_remove: "Delete key", ai_test: "Test connection", ai_testing: "Testing…", ai_model: "Model", ai_getKey: "Get a key", ai_lastTest: "Last test",
   ai_s_ok: "Connected", ai_s_none: "Not configured", ai_s_fail: "Connection failed", ai_s_untested: "Saved, not tested",
@@ -62,7 +63,7 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
   emp_sec_pay: "Pay", emp_payType: "Pay basis", emp_monthly: "Monthly", emp_dailyPay: "Daily", emp_hourly: "Hourly", emp_piece: "Per piece",
   emp_salary: "Salary / rate", emp_payMethod: "Payment method (cash, transfer, wallet…)", emp_insurance: "Social insurance no.",
   emp_sec_more: "More", emp_skills: "Skills / qualifications", emp_notes: "Notes",
-  emp_count: "employees", emp_payroll: "Monthly payroll (monthly-paid only)",
+  emp_count: "employees", emp_payroll: "Net payroll",
   // invoices
   inv_new: "New document", inv_invoice: "Invoice", inv_quote: "Quote", inv_no: "Number", inv_customer: "Customer", inv_issue: "Issue date", inv_due: "Due date",
   inv_items: "Items", inv_desc: "Description", inv_qty: "Qty", inv_price: "Price", inv_addItem: "Add item", inv_discount: "Discount %", inv_tax: "Tax %",
@@ -81,6 +82,7 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+  emp_deductions: "الخصومات",
 aimodels: "نماذج الذكاء الاصطناعي", ai_sub: "بطاقة لكل مزوّد. المفاتيح تبقى في هذا المتصفح فقط.", ai_default: "الافتراضي", ai_setDefault: "اجعله الافتراضي", ai_key: "مفتاح API", ai_show: "إظهار (8 ثوانٍ)", ai_copy: "نسخ",
   ai_save: "حفظ المفتاح", ai_replace: "استبدال", ai_remove: "حذف المفتاح", ai_test: "اختبار الاتصال", ai_testing: "جارٍ الاختبار…", ai_model: "النموذج", ai_getKey: "الحصول على مفتاح", ai_lastTest: "آخر اختبار",
   ai_s_ok: "متصل", ai_s_none: "غير مُعدّ", ai_s_fail: "فشل الاتصال", ai_s_untested: "محفوظ ولم يُختبر",
@@ -140,7 +142,7 @@ inventory: "المخزون", inv_partial: "عربون مدفوع", inv_paidAmt: 
   emp_sec_pay: "الأجر", emp_payType: "أساس الأجر", emp_monthly: "شهري", emp_dailyPay: "يومي", emp_hourly: "بالساعة", emp_piece: "بالقطعة",
   emp_salary: "الراتب / الأجر", emp_payMethod: "طريقة الدفع (نقداً، حوالة، محفظة…)", emp_insurance: "رقم التأمينات الاجتماعية",
   emp_sec_more: "إضافي", emp_skills: "المهارات / المؤهلات", emp_notes: "ملاحظات",
-  emp_count: "موظف", emp_payroll: "كشف الرواتب الشهرية (الشهري فقط)",
+  emp_count: "موظف", emp_payroll: "صافي الرواتب",
   inv_new: "مستند جديد", inv_invoice: "فاتورة", inv_quote: "عرض سعر", inv_no: "الرقم", inv_customer: "العميل", inv_issue: "تاريخ الإصدار", inv_due: "تاريخ الاستحقاق",
   inv_items: "البنود", inv_desc: "الوصف", inv_qty: "الكمية", inv_price: "السعر", inv_addItem: "إضافة بند", inv_discount: "الخصم %", inv_tax: "الضريبة %",
   inv_sub: "المجموع الفرعي", inv_discAmt: "الخصم", inv_taxAmt: "الضريبة", inv_total: "الإجمالي", inv_notes: "ملاحظات / شروط الدفع",

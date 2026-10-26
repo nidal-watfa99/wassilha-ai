@@ -739,3 +739,5 @@ table.data tr:hover td { background: rgba(21, 30, 44, 0.35); }
 .mini3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
 .mini3 > div { border: 1px solid var(--border); border-radius: 10px; padding: .4rem .6rem; background: rgba(255,255,255,.03); display: grid; gap: 2px; }
 .mini3 small { color: var(--text-3); font-size: var(--text-xs); } .mini3 b { font-variant-numeric: tabular-nums; }
+
+.stat-label { white-space: normal; line-height: 1.3; }

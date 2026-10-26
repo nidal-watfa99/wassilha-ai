@@ -61,28 +61,36 @@ export default function Employees() {
       {list.length === 0 ? (
         <EmptyState icon={<IconUsers />} text={t("b_none")} />
       ) : (
-        <div className="glass card table-wrap">
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--text-sm)" }}>
-            <thead><tr style={{ textAlign: "start", color: "var(--text-3)" }}>
-              <th>{t("emp_no")}</th><th>{t("emp_full")}</th><th>{t("emp_title")}</th><th>{t("emp_level")}</th><th>{t("emp_net")}</th><th>{t("emp_status")}</th><th />
-            </tr></thead>
-            <tbody>
-              {list.map((x) => (
-                <tr key={x.id} style={{ borderTop: "1px solid var(--border)" }}>
-                  <td dir="ltr">{x.no}</td>
-                  <td><strong>{x.fullName}</strong><div style={{ color: "var(--text-3)", fontSize: "var(--text-xs)" }} dir="ltr">{x.phone}</div></td>
-                  <td>{x.jobTitle}<div style={{ color: "var(--text-3)", fontSize: "var(--text-xs)" }}>{x.department}</div></td>
-                  <td>{t("lvl_" + (x.level || "employee"))}<div style={{ color: "var(--text-3)", fontSize: "var(--text-xs)" }}>{x.branch}</div></td>
-                  <td dir="ltr">{fmt(payroll(x).net)}</td>
-                  <td><span className={`badge ${stBadge[x.status] || ""}`}>{t("emp_" + (x.status === "ended" ? "ended" : x.status))}</span></td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    <button className="icon-btn" aria-label={t("b_edit")} onClick={() => open(x)}><IconEdit /></button>
-                    <button className="icon-btn" aria-label={t("delete")} onClick={() => setDel(x)}><IconTrash /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "grid", gap: "0.7rem" }}>
+          {list.map((x) => {
+            const p = payroll(x);
+            return (
+              <div key={x.id} className="glass card" style={{ display: "grid", gap: "0.6rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
+                  <div>
+                    <strong style={{ fontSize: "1.05rem" }}>{x.fullName}</strong>
+                    <div style={{ color: "var(--text-3)", fontSize: "var(--text-sm)" }}>{x.jobTitle}{x.jobTitle && " · "}{t("lvl_" + (x.level || "employee"))}</div>
+                  </div>
+                  <span className={`badge ${stBadge[x.status] || ""}`}>{t("emp_" + (x.status === "ended" ? "ended" : x.status))}</span>
+                </div>
+                <div style={{ display: "flex", gap: "0.4rem 0.9rem", flexWrap: "wrap", fontSize: "var(--text-sm)", color: "var(--text-2)" }}>
+                  <bdi dir="ltr">{x.no}</bdi>
+                  {x.department && <span>🏢 {x.department}</span>}
+                  {x.branch && <span>📍 {x.branch}</span>}
+                  {x.phone && <a href={`tel:${x.phone}`} dir="ltr" style={{ color: "inherit" }}>📞 {x.phone}</a>}
+                </div>
+                <div className="mini3">
+                  {[[t("emp_total"), p.base], [t("emp_deductions"), p.base - p.afterDed], [t("emp_net"), p.net]].map(([l, v], k) => (
+                    <div key={k}><small>{l}</small><b dir="ltr" style={k === 2 ? { color: "#4ade80" } : k === 1 && v > 0 ? { color: "#ff8a9b" } : undefined}>{fmt(v)}</b></div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => open(x)}><IconEdit />{t("b_edit")}</button>
+                  <button className="icon-btn" aria-label={t("delete")} onClick={() => setDel(x)}><IconTrash /></button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

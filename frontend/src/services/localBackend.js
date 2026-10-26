@@ -5,6 +5,7 @@
    device, and there is no live chat between different devices in this mode. */
 
 import { callModel, getAiConfig } from "./aiClient";
+import { buildSystemPrompt } from "./aiContext";
 
 const DB_KEY = "wassilha_local_db_v1";
 const SESSION_KEY = "wassilha_local_session_v1";
@@ -439,7 +440,9 @@ async function route(method, path, body, query) {
       const history = db.aiMessages.filter((m) => m.conversation_id === conv.id).slice(-20).map((m) => ({ role: m.role, content: m.content }));
       let answer;
       try {
-        answer = await callModel(cfg.provider, cfg.apiKey, cfg.model, [...history, { role: "user", content }], 1024);
+        answer = await callModel(cfg.provider, cfg.apiKey, cfg.model, [
+          { role: "system", content: buildSystemPrompt({ contacts: own(db, "contacts", user).length, tasksOpen: own(db, "tasks", user).filter((x) => x.status !== "done").length, documents: own(db, "documents", user).length }) },
+          ...history, { role: "user", content }], 1024);
       } catch (e) {
         fail(502, e?.kind === "invalid_key" ? "ai_invalid_key" : "ai_provider_error");
       }
