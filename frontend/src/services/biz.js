@@ -30,7 +30,7 @@ const TERMS = {
 
 const DEFAULT = {
   configured: false, type: "custom", name: "", currency: "USD", taxRate: 0, reminderDays: 3,
-  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], seq: { invoice: 0, employee: 0, quote: 0 },
+  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, seq: { invoice: 0, employee: 0, quote: 0 },
 };
 
 const mem = {};
@@ -93,6 +93,15 @@ export function service(e) {
   let m = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth() - (b.getDate() < a.getDate() ? 1 : 0);
   if (m < 0) m = 0;
   return `${Math.floor(m / 12)}y ${m % 12}m`;
+}
+
+/* ---------- contact profiles (extra data keyed by contact id) ---------- */
+export const CONTACT_TYPES = ["customer", "wholesaler", "retailer", "supplier", "importer", "exporter", "partner", "other"];
+export const setProfile = (id, p) => update((s) => ({ ...s, profiles: { ...s.profiles, [id]: p } }));
+const norm = (x) => String(x || "").trim().toLowerCase();
+export function finOf(biz, name) {
+  const list = biz.invoices.filter((x) => x.type === "invoice" && x.status !== "draft" && x.status !== "cancelled" && norm(x.customer) === norm(name) && (x.currency || biz.currency) === biz.currency);
+  return { n: list.length, total: list.reduce((a, x) => a + totals(x).total, 0), paid: list.reduce((a, x) => a + paidOf(x), 0), left: list.reduce((a, x) => a + leftOf(x), 0), list };
 }
 
 /* ---------- inventory ---------- */

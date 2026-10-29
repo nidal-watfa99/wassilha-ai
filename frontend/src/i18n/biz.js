@@ -1,5 +1,10 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+ct_profile: "Profile", ct_voice: "Voice search", ct_noVoice: "Voice search is not available in this browser (use Chrome) or the microphone is blocked.",
+  ct_type: "Contact type", ct_t_customer: "Customer", ct_t_wholesaler: "Wholesaler", ct_t_retailer: "Retailer", ct_t_supplier: "Supplier", ct_t_importer: "Importer", ct_t_exporter: "Exporter", ct_t_partner: "Partner", ct_t_other: "Other",
+  ct_profession: "Profession", ct_bizNature: "Nature of business", ct_city: "City", ct_taxNo: "Tax / commercial reg. no.", ct_credit: "Credit limit", ct_overCredit: "Outstanding balance exceeds the credit limit.",
+  ct_sec_account: "Account statement", ct_sec_info: "Details", ct_sec_media: "Voice notes, photos & videos", ct_record: "Record voice note", ct_stop: "Stop", ct_attach: "Attach file",
+  ct_share: "Share", ct_micDenied: "Microphone access was denied.", ct_noShare: "Sharing is not supported here; the file was downloaded.",
   emp_deductions: "Deductions",
 aimodels: "AI models", ai_sub: "One card per provider. Keys stay in this browser only.", ai_default: "Default", ai_setDefault: "Make default", ai_key: "API key", ai_show: "Show (8 s)", ai_copy: "Copy",
   ai_save: "Save key", ai_replace: "Replace", ai_remove: "Delete key", ai_test: "Test connection", ai_testing: "Testing…", ai_model: "Model", ai_getKey: "Get a key", ai_lastTest: "Last test",
@@ -82,6 +87,11 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+ct_profile: "الملف", ct_voice: "بحث صوتي", ct_noVoice: "البحث الصوتي غير متاح في هذا المتصفح (استخدم Chrome) أو أن الميكروفون محظور.",
+  ct_type: "نوع الجهة", ct_t_customer: "زبون", ct_t_wholesaler: "تاجر جملة", ct_t_retailer: "تاجر مفرق", ct_t_supplier: "مورّد", ct_t_importer: "مستورد", ct_t_exporter: "مصدّر", ct_t_partner: "شريك", ct_t_other: "أخرى",
+  ct_profession: "المهنة", ct_bizNature: "طبيعة العمل", ct_city: "المدينة", ct_taxNo: "الرقم الضريبي / السجل التجاري", ct_credit: "سقف الائتمان", ct_overCredit: "الرصيد المستحق تجاوز سقف الائتمان.",
+  ct_sec_account: "كشف الحساب", ct_sec_info: "البيانات", ct_sec_media: "رسائل صوتية وصور وفيديو", ct_record: "تسجيل رسالة صوتية", ct_stop: "إيقاف", ct_attach: "إرفاق ملف",
+  ct_share: "مشاركة", ct_micDenied: "تم رفض الوصول إلى الميكروفون.", ct_noShare: "المشاركة غير مدعومة هنا؛ نُزّل الملف.",
   emp_deductions: "الخصومات",
 aimodels: "نماذج الذكاء الاصطناعي", ai_sub: "بطاقة لكل مزوّد. المفاتيح تبقى في هذا المتصفح فقط.", ai_default: "الافتراضي", ai_setDefault: "اجعله الافتراضي", ai_key: "مفتاح API", ai_show: "إظهار (8 ثوانٍ)", ai_copy: "نسخ",
   ai_save: "حفظ المفتاح", ai_replace: "استبدال", ai_remove: "حذف المفتاح", ai_test: "اختبار الاتصال", ai_testing: "جارٍ الاختبار…", ai_model: "النموذج", ai_getKey: "الحصول على مفتاح", ai_lastTest: "آخر اختبار",

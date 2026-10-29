@@ -5,6 +5,8 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, Spinner, ConfirmDialog, ErrorNote } from "../components/UI";
 import { IconUsers, IconSearch, IconPlus, IconEdit, IconTrash, IconChat } from "../components/Icons";
 import { formatDateTime } from "../i18n";
+import ContactProfile from "./ContactProfile";
+import { useBiz, finOf, fmt, CONTACT_TYPES } from "../services/biz";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", company: "", notes: "" };
 
@@ -15,6 +17,15 @@ export default function Contacts() {
   const [q, setQ] = useState("");
   const [qInput, setQInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const biz = useBiz();
+  const [profile, setProfileOf] = useState(null), [typeF, setTypeF] = useState(""), [listening, setListening] = useState(false);
+  const voice = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return toast(t("ct_noVoice"), "error");
+    const r = new SR(); r.lang = locale === "ar" ? "ar-SA" : locale === "es" ? "es-ES" : "en-US"; r.interimResults = false;
+    r.onresult = (e) => setQInput(e.results[0][0].transcript); r.onend = () => setListening(false); r.onerror = () => { setListening(false); toast(t("ct_noVoice"), "error"); };
+    setListening(true); r.start();
+  };
   const seq = useRef(0);
   const fx = useRef({}); fx.current = { toast, tError };
   const [sort, setSort] = useState("name");
@@ -99,6 +110,7 @@ export default function Contacts() {
                  onChange={(e) => setQInput(e.target.value)} aria-label={t("searchContacts")} />
         </div>
         <button className="btn btn-ghost btn-sm" type="submit" aria-label={t("b_search")}>{busy ? "…" : "🔍"}</button>
+        <button className={`btn btn-sm ${listening ? "btn-primary" : "btn-ghost"}`} type="button" onClick={voice} aria-label={t("ct_voice")}>🎙</button>
       </form>
         <select className="select" style={{ width: "auto" }} value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t("sort") || "sort"}>
           <option value="name">{t("name")}</option>
@@ -110,6 +122,9 @@ export default function Contacts() {
         </button>
       </div>
 
+      <select className="select" style={{ width: "auto", marginBottom: "0.7rem" }} value={typeF} onChange={(e) => setTypeF(e.target.value)}>
+        <option value="">{t("map_filter")}</option>{CONTACT_TYPES.map((k) => <option key={k} value={k}>{t("ct_t_" + k)}</option>)}
+      </select>
       {error && (
         <div className="glass card" style={{ borderColor: "rgba(255,107,129,.5)", marginBottom: "0.8rem", display: "flex", justifyContent: "space-between", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
           <span>{tError(error)}</span><button className="btn btn-ghost btn-sm" onClick={load}>{t("b_retry")}</button>
@@ -125,43 +140,38 @@ export default function Contacts() {
                           {t("addFirstContact")}
                         </button>)} />
         ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>{t("name")}</th>
-                  <th>{t("email")}</th>
-                  <th className="hide-sm">{t("phone")}</th>
-                  <th className="hide-sm">{t("company")}</th>
-                  <th style={{ width: 1 }}>{t("actions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((c) => (
-                  <tr key={c.id}>
-                    <td><button style={{ all: "unset", cursor: "pointer", fontWeight: 600, color: "var(--cyan)" }} onClick={() => openDetail(c)}>{c.name}</button></td>
-                    <td dir="ltr" style={{ textAlign: "start" }}>{c.email}</td>
-                    <td dir="ltr" className="hide-sm" style={{ textAlign: "start" }}>{c.phone}</td>
-                    <td className="hide-sm">{c.company}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.3rem" }}>
-                        <button className="icon-btn" style={{ width: 36, height: 36 }} title={t("editContact")}
-                                onClick={() => { setEditing(c); setForm({ name: c.name, email: c.email, phone: c.phone, company: c.company, notes: c.notes }); }}>
-                          <IconEdit style={{ width: 16, height: 16 }} />
-                        </button>
-                        <button className="icon-btn" style={{ width: 36, height: 36 }} title={t("delete")}
-                                onClick={() => setDeleting(c)}>
-                          <IconTrash style={{ width: 16, height: 16 }} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: "grid", gap: "0.7rem", padding: "0.7rem" }}>
+            {items.filter((c) => !typeF || (biz.profiles[c.id]?.type || "customer") === typeF).map((c) => {
+              const pf = biz.profiles[c.id], fin = finOf(biz, c.name);
+              return (
+                <div key={c.id} className="glass card" style={{ display: "grid", gap: "0.55rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
+                    <div>
+                      <button style={{ all: "unset", cursor: "pointer", fontWeight: 700, fontSize: "1.05rem", color: "var(--cyan)" }} onClick={() => setProfileOf(c)}>{c.name}</button>
+                      <div style={{ color: "var(--text-3)", fontSize: "var(--text-sm)" }}>{[c.company, pf?.profession].filter(Boolean).join(" · ")}</div>
+                    </div>
+                    <span className="badge badge-blue">{t("ct_t_" + (pf?.type || "customer"))}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.3rem 0.9rem", flexWrap: "wrap", fontSize: "var(--text-sm)", color: "var(--text-2)" }}>
+                    {c.phone && <a href={`tel:${c.phone}`} dir="ltr" style={{ color: "inherit" }}>📞 {c.phone}</a>}
+                    {c.email && <bdi dir="ltr">✉ {c.email}</bdi>}
+                    {pf?.city && <span>📍 {pf.city}</span>}
+                  </div>
+                  {fin.n > 0 && <div className="mini3">{[[t("inv_total"), fin.total], [t("inv_paidAmt"), fin.paid], [t("inv_left"), fin.left]].map(([l, v], k) => <div key={k}><small>{l}</small><b dir="ltr" style={k === 2 && v > 0 ? { color: "var(--cyan)" } : undefined}>{fmt(v)}</b></div>)}</div>}
+                  <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setProfileOf(c)}>{t("ct_profile")}</button>
+                    <button className="icon-btn" title={t("messages")} aria-label={t("messages")} onClick={() => openDetail(c)}><IconChat style={{ width: 16, height: 16 }} /></button>
+                    <button className="icon-btn" title={t("editContact")} onClick={() => { setEditing(c); setForm({ name: c.name, email: c.email, phone: c.phone, company: c.company, notes: c.notes }); }}><IconEdit style={{ width: 16, height: 16 }} /></button>
+                    <button className="icon-btn" title={t("delete")} onClick={() => setDeleting(c)}><IconTrash style={{ width: 16, height: 16 }} /></button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {profile && <ContactProfile contact={profile} onClose={() => setProfileOf(null)} />}
 
       {editing && (
         <Modal title={editing === "new" ? t("newContact") : t("editContact")} onClose={() => setEditing(null)}>

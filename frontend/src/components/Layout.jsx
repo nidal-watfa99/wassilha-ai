@@ -85,7 +85,7 @@ export function Layout() {
     <div className="app-shell">
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <div className="brand-orb" aria-hidden="true">و</div>
+          <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="" aria-hidden="true" />
           <div>
             <div className="brand-name silver-blue-text">{t("appName")}</div>
             <div style={{ fontSize: "0.7rem", color: "var(--text-3)" }}>{t("tagline")}</div>
@@ -126,18 +126,21 @@ export function Layout() {
           <button className="icon-btn menu-toggle" onClick={() => setSidebarOpen((v) => !v)} aria-label="menu">
             <IconMenu />
           </button>
-          <h1 className="silver-text">{t(location.state?.pageTitle || currentTitle(location.pathname, t))}</h1>
+          <div className="header-brand">
+            <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="" aria-hidden="true" />
+            <div style={{ minWidth: 0 }}>
+              <div className="brand-name silver-blue-text">{t("appName")}</div>
+              <h1 className="header-page">{t(location.state?.pageTitle || currentTitle(location.pathname, t))}</h1>
+            </div>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span className={`badge ${rt.online ? "badge-green" : ""}`} title={t("sessionActive")}>
-              {rt.online ? "●" : "○"}
-            </span>
             {alerts > 0 && (
               <button className="icon-btn" style={{ position: "relative" }} onClick={() => navigate(due.length ? "/invoices" : "/inventory")} aria-label={t("inv_dueTitle")} title={t("inv_dueTitle")}>
                 <IconBell />
                 <span className="badge badge-red" style={{ position: "absolute", top: -4, insetInlineEnd: -4, padding: "0 5px", fontSize: "0.65rem" }}>{alerts}</span>
               </button>
             )}
-            <LangSwitch compact />
+            <LangSwitch />
           </div>
         </header>
         <main className="page">
@@ -170,15 +173,31 @@ function currentTitle(pathname, t) {
   return found ? found.key : "dashboard";
 }
 
-export function LangSwitch({ compact }) {
+const LANG_NAMES = { ar: "العربية", en: "English", es: "Español" };
+export function LangSwitch() {
   const { locale, setLocale } = useApp();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const out = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", out); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", out); document.removeEventListener("keydown", esc); };
+  }, [open]);
   return (
-    <div className="lang-switch" role="group" aria-label="language">
-      {Object.entries(LOCALES).map(([code, { label }]) => (
-        <button key={code} onClick={() => setLocale(code)} aria-pressed={locale === code}>
-          {code.toUpperCase()}
-        </button>
-      ))}
+    <div className="lang-menu" ref={ref}>
+      <button type="button" className="lang-btn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <span aria-hidden="true">🌐</span><span>{LANG_NAMES[locale] || locale}</span><span aria-hidden="true" style={{ fontSize: "0.7em" }}>▾</span>
+      </button>
+      {open && (
+        <ul className="lang-pop" role="listbox">
+          {Object.keys(LOCALES).map((c) => (
+            <li key={c}><button type="button" role="option" aria-selected={locale === c} onClick={() => { setLocale(c); setOpen(false); }}>
+              <span>{LANG_NAMES[c] || c}</span>{locale === c && <span aria-hidden="true">✓</span>}</button></li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
