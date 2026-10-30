@@ -27,22 +27,22 @@ export default function Dashboard() {
 
   const c = data.counts;
   const stats = [
-    { label: t("contactsCount"), value: c.contacts },
-    { label: t("tasksOpen"), value: c.tasks_open },
-    { label: t("messagesSent"), value: c.messages_sent },
-    { label: t("documentsCount"), value: c.documents },
-    { label: t("tasksDone"), value: c.tasks_done },
-    { label: t("aiChats"), value: c.ai_conversations },
+    { label: t("contactsCount"), value: c.contacts, to: "/contacts" },
+    { label: t("tasksOpen"), value: c.tasks_open, to: "/tasks" },
+    { label: t("messagesSent"), value: c.messages_sent, to: "/messages" },
+    { label: t("documentsCount"), value: c.documents, to: "/documents" },
+    { label: t("tasksDone"), value: c.tasks_done, to: "/tasks" },
+    { label: t("aiChats"), value: c.ai_conversations, to: "/ai" },
   ];
 
   return (
     <div>
       <div className="stat-grid">
         {stats.map((s) => (
-          <div key={s.label} className="glass card stat-card card-hover">
+          <Link key={s.label} to={s.to} className="glass card stat-card card-hover" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
             <span className="stat-label">{s.label}</span>
             <span className="stat-value silver-blue-text">{s.value}</span>
-          </div>
+          </Link>
         ))}
       </div>
 
