@@ -24,7 +24,7 @@ export default function Restaurant() {
   const { t, toast } = useApp();
   const biz = useBiz();
   const [tab, setTab] = useState("orders");
-  const [modal, setModal] = useState(null), [del, setDel] = useState(null), [pay, setPay] = useState(null), [method, setMethod] = useState("cash"), [rf, setRf] = useState("today");
+  const [modal, setModal] = useState(null), [del, setDel] = useState(null), [pay, setPay] = useState(null), [method, setMethod] = useState("cash"), [rf, setRf] = useState("today"), [payStay, setPayStay] = useState("");
   const [f, set, setF] = useForm({});
   const fileRef = useRef(null), trash = useRef([]);
   const today = todayStr(), cur = biz.currency;
@@ -56,9 +56,11 @@ export default function Restaurant() {
   };
   const empName = (id) => biz.employees.find((e) => e.id === id)?.fullName || "";
   const payNow = () => {
+    if (method === "room" && !payStay) return toast(t("ho_pickStay"), "error");
     const o = pay, c = calc(o);
-    const inv = { id: uid(), no: nextNo("invoice"), type: "invoice", customer: o.customer || t("rs_walkin"), issueDate: today, dueDate: "", currency: cur, discount: o.discount || 0, tax: o.tax || 0, notes: `${o.no} · ${t("rs_" + o.type)} · ${method}`, paidAmount: c.total, status: "paid", items: c.items.map((i) => ({ ...i, desc: i.desc === "Service" ? t("rs_service") : i.desc === "Delivery" ? t("rs_delivFee") : i.desc, unit: "" })) };
-    upsert("invoices", inv);
+    const inv = { id: uid(), no: method === "room" ? "" : nextNo("invoice"), type: "invoice", customer: o.customer || t("rs_walkin"), issueDate: today, dueDate: "", currency: cur, discount: o.discount || 0, tax: o.tax || 0, notes: `${o.no} · ${t("rs_" + o.type)} · ${method}`, paidAmount: c.total, status: "paid", items: c.items.map((i) => ({ ...i, desc: i.desc === "Service" ? t("rs_service") : i.desc === "Delivery" ? t("rs_delivFee") : i.desc, unit: "" })) };
+    if (method === "room") update((s) => ({ ...s, stays: s.stays.map((x) => (x.id === payStay ? { ...x, charges: [...(x.charges || []), { id: uid(), date: today, desc: `${t("restaurant")} ${o.no}`, qty: 1, amount: +c.total.toFixed(2), taxIncluded: true }] } : x)) }));
+    else upsert("invoices", inv);
     update((s) => {
       const used = {}; o.lines.forEach((l) => { const m = s.menuItems.find((x) => x.id === l.menuId); if (m) Object.entries(usageMap(m, l.qty, s.inventory)).forEach(([k, v]) => { used[k] = (used[k] || 0) + v; }); });
       return { ...s, inventory: s.inventory.map((it) => (used[it.id] ? { ...it, qtyOut: (Number(it.qtyOut) || 0) + used[it.id] } : it)) };
@@ -270,7 +272,8 @@ export default function Restaurant() {
 
       {pay && <Modal title={`${t("rs_pay")} — ${pay.no}`} onClose={() => setPay(null)}>
         <Summary cur={cur} rows={[{ label: t("inv_sub"), value: calc(pay).sub, sub: true }, { label: t("rs_service"), value: calc(pay).service, tone: "plus" }, ...(calc(pay).delivery ? [{ label: t("rs_delivFee"), value: calc(pay).delivery, tone: "plus" }] : []), { label: t("inv_discAmt"), value: calc(pay).disc, tone: "minus" }, { label: t("inv_taxAmt"), value: calc(pay).tax, tone: "plus" }, ...(calc(pay).deposit ? [{ label: t("rs_deposit"), value: calc(pay).deposit, tone: "minus" }] : [])]} total={{ label: calc(pay).deposit ? t("rs_due") : t("inv_total"), value: calc(pay).deposit ? calc(pay).due : calc(pay).total }} />
-        <F label={t("rs_method")}><select className="select" value={method} onChange={(e) => setMethod(e.target.value)}>{["cash", "card", "transfer", "wallet"].map((k) => <option key={k} value={k}>{t("exp_m_" + (k === "card" ? "card" : k))}</option>)}</select></F>
+        <F label={t("rs_method")}><select className="select" value={method} onChange={(e) => setMethod(e.target.value)}>{["cash", "card", "transfer", "wallet", ...(biz.stays.some((x) => x.status === "checkedin") ? ["room"] : [])].map((k) => <option key={k} value={k}>{k === "room" ? t("ho_toRoom") : t("exp_m_" + k)}</option>)}</select></F>
+        {method === "room" && <F label={t("ho_guest")}><select className="select" value={payStay} onChange={(e) => setPayStay(e.target.value)}><option value="">—</option>{biz.stays.filter((x) => x.status === "checkedin").map((x) => <option key={x.id} value={x.id}>{x.guest} · {biz.rooms.find((r) => r.id === x.roomId)?.name}</option>)}</select></F>}
         <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end" }}><button className="btn btn-ghost btn-sm" onClick={() => setPay(null)}>{t("cancel")}</button><button className="btn btn-primary btn-sm" onClick={payNow}>{t("rs_pay")}</button></div></Modal>}
       {del && <ConfirmDialog title={t("delete")} message={t("b_confirmDelete")} onConfirm={() => { if (del.x.photo) delMedia(del.x.photo); remove(del.coll, del.x.id); }} onClose={() => setDel(null)} />}
       <datalist id="rc">{[]}</datalist>

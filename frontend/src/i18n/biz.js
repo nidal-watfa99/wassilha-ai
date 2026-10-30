@@ -1,5 +1,15 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+hotel: "Hotel", type_hotel: "Hotel / guest house", ho_board: "Today", ho_res: "Reservations", ho_grid: "Availability", ho_rooms: "Rooms", ho_newStay: "New reservation", ho_newRoom: "New room",
+  ho_inHouse: "In-house guests", ho_occNow: "Occupancy now", ho_arrivals: "Arrivals today", ho_departures: "Departures due", ho_dirty: "Rooms to clean", ho_checkIn: "Check in", ho_checkOut: "Check-out date", ho_folio: "Guest account",
+  ho_monthKpi: "Month performance", ho_roomNights: "Room nights sold", ho_roomRevenue: "Room revenue", ho_adr: "Average daily rate (ADR)", ho_revpar: "Revenue per available room", ho_occMonth: "Occupancy of the month %",
+  ho_kpiNote: "Revenue counts room nights at the agreed rate, before tax, for reservations that are not cancelled or no-show.", ho_gridHelp: "tap an empty cell to book, a coloured one to open",
+  ho_st_booked: "Booked", ho_st_checkedin: "Checked in", ho_st_checkedout: "Checked out", ho_st_cancelled: "Cancelled", ho_st_noshow: "No-show",
+  ho_room: "Room", ho_roomNo: "Room / suite number", ho_beds: "Beds", ho_rate: "Rate per night", ho_t_single: "Single", ho_t_double: "Double", ho_t_twin: "Twin", ho_t_triple: "Triple", ho_t_family: "Family", ho_t_suite: "Suite", ho_t_other: "Other",
+  ho_hk_clean: "Clean", ho_hk_dirty: "Dirty", ho_hk_maintenance: "Maintenance", ho_guest: "Guest", ho_idNo: "ID / passport no.", ho_adults: "Adults", ho_children: "Children", ho_source: "Booking source",
+  ho_src_walkin: "Walk-in", ho_src_phone: "Phone", ho_src_online: "Online", ho_src_agency: "Agency", ho_nights: "nights", ho_charges: "Extra charges", ho_payments: "Payments & deposit",
+  ho_conflict: "This room is already booked for part of these dates.", ho_badDates: "Check-out must be after check-in.", ho_needRooms: "Add rooms first.", ho_dupRoom: "This room number already exists.",
+  ho_roomHasStays: "This room has reservations.", ho_roomMaint: "The room is marked under maintenance.", ho_settle: "Settle & check out", ho_invoiced: "Invoice created:", ho_toRoom: "Charge to guest room", ho_pickStay: "Choose the in-house guest.",
 pr_bills: "Utility bills", pr_shared: "Shared services", pr_gen: "Create units in bulk", pr_fromFloor: "From floor", pr_toFloor: "To floor", pr_perFloor: "Units per floor", pr_prefix: "Prefix (optional)", pr_created: "units created",
   pr_genHelp: "Existing numbers are skipped. Numbering: floor + two digits →", pr_furnished: "Furnishing", pr_f_furnished: "Furnished", pr_f_unfurnished: "Unfurnished", pr_rooms: "rooms", pr_dupUnit: "This unit number already exists in this building.",
   pr_u_suite: "Suite", pr_u_room: "Room", pr_u_roof: "Roof", pr_u_parking: "Parking spot", pr_chargeShared: "Pays shared services (cleaning…)", pr_chargeUtils: "Pays shared utility bills", pr_notCharged: "Not charged (per contract)",
@@ -138,6 +148,16 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+hotel: "الفندق", type_hotel: "فندق / نُزل", ho_board: "اليوم", ho_res: "الحجوزات", ho_grid: "التوفر", ho_rooms: "الغرف", ho_newStay: "حجز جديد", ho_newRoom: "غرفة جديدة",
+  ho_inHouse: "نزلاء داخل الفندق", ho_occNow: "الإشغال الآن", ho_arrivals: "وصول اليوم", ho_departures: "مغادرات مستحقة", ho_dirty: "غرف تحتاج تنظيفاً", ho_checkIn: "تسجيل الوصول", ho_checkOut: "تاريخ المغادرة", ho_folio: "حساب النزيل",
+  ho_monthKpi: "أداء الشهر", ho_roomNights: "ليالي الغرف المباعة", ho_roomRevenue: "إيراد الغرف", ho_adr: "متوسط سعر الليلة", ho_revpar: "الإيراد لكل غرفة متاحة", ho_occMonth: "إشغال الشهر %",
+  ho_kpiNote: "الإيراد يحسب ليالي الغرف بالسعر المتفق عليه قبل الضريبة، للحجوزات غير الملغاة ولا الغائبة.", ho_gridHelp: "المس خلية فارغة للحجز، أو ملوّنة لفتحها",
+  ho_st_booked: "محجوز", ho_st_checkedin: "وصل", ho_st_checkedout: "غادر", ho_st_cancelled: "ملغى", ho_st_noshow: "لم يحضر",
+  ho_room: "الغرفة", ho_roomNo: "رقم الغرفة / الجناح", ho_beds: "الأسرّة", ho_rate: "سعر الليلة", ho_t_single: "مفردة", ho_t_double: "مزدوجة", ho_t_twin: "سريران", ho_t_triple: "ثلاثية", ho_t_family: "عائلية", ho_t_suite: "جناح", ho_t_other: "أخرى",
+  ho_hk_clean: "نظيفة", ho_hk_dirty: "متسخة", ho_hk_maintenance: "صيانة", ho_guest: "النزيل", ho_idNo: "رقم الهوية / الجواز", ho_adults: "بالغون", ho_children: "أطفال", ho_source: "مصدر الحجز",
+  ho_src_walkin: "حضور مباشر", ho_src_phone: "هاتف", ho_src_online: "إنترنت", ho_src_agency: "وكالة", ho_nights: "ليالٍ", ho_charges: "رسوم إضافية", ho_payments: "الدفعات والعربون",
+  ho_conflict: "الغرفة محجوزة مسبقاً في جزء من هذه التواريخ.", ho_badDates: "المغادرة يجب أن تكون بعد الوصول.", ho_needRooms: "أضف غرفاً أولاً.", ho_dupRoom: "رقم الغرفة موجود.",
+  ho_roomHasStays: "لهذه الغرفة حجوزات.", ho_roomMaint: "الغرفة معلّمة تحت الصيانة.", ho_settle: "تسوية الحساب والمغادرة", ho_invoiced: "أُنشئت الفاتورة:", ho_toRoom: "على حساب غرفة النزيل", ho_pickStay: "اختر النزيل المقيم.",
 pr_bills: "فواتير الخدمات", pr_shared: "الخدمات المشتركة", pr_gen: "إنشاء وحدات دفعة واحدة", pr_fromFloor: "من الطابق", pr_toFloor: "إلى الطابق", pr_perFloor: "عدد الوحدات في الطابق", pr_prefix: "بادئة (اختياري)", pr_created: "وحدة أُنشئت",
   pr_genHelp: "الأرقام الموجودة تُتخطّى. الترقيم: رقم الطابق + رقمان →", pr_furnished: "التأثيث", pr_f_furnished: "مفروشة", pr_f_unfurnished: "فارغة (غير مفروشة)", pr_rooms: "غرف", pr_dupUnit: "رقم الوحدة هذا موجود في المبنى.",
   pr_u_suite: "جناح", pr_u_room: "غرفة", pr_u_roof: "روف", pr_u_parking: "موقف سيارة", pr_chargeShared: "يتحمل الخدمات المشتركة (النظافة…)", pr_chargeUtils: "يتحمل فواتير الخدمات المشتركة", pr_notCharged: "لا يُحمَّل (حسب العقد)",

@@ -29,6 +29,7 @@ import AiModels from "./pages/AiModels";
 import Restaurant from "./pages/Restaurant";
 import Purchases from "./pages/Purchases";
 import Properties from "./pages/Properties";
+import Hotel from "./pages/Hotel";
 
 function PrivateRoute({ children }) {
   const { user, authChecked } = useApp();
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="restaurant" element={<Restaurant />} />
           <Route path="purchases" element={<Purchases />} />
           <Route path="properties" element={<Properties />} />
+          <Route path="hotel" element={<Hotel />} />
           <Route path="reports" element={<Reports />} />
           <Route path="catalog" element={<Catalog />} />
           <Route path="inventory" element={<Inventory />} />
