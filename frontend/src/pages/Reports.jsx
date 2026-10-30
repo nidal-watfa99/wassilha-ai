@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { F, Grid, ltr } from "../components/Form";
-import { useBiz, totals, paidOf, leftOf, fmt, todayStr, getDue, getLow, stockLeft, payroll } from "../services/biz";
+import { useBiz, expMain, totals, paidOf, leftOf, fmt, todayStr, getDue, getLow, stockLeft, payroll } from "../services/biz";
 import { EXP_CATS } from "./Expenses";
 
 const ym = (d) => d.toISOString().slice(0, 7);
@@ -30,13 +30,13 @@ export default function Reports() {
   const docs = live.filter((x) => (x.currency || biz.currency) === biz.currency), other = live.length - docs.length;
   const sum = (arr, fn) => arr.reduce((a, x) => a + fn(x), 0);
   const sales = sum(docs, (x) => totals(x).total), collected = sum(docs, paidOf), owed = sum(docs, leftOf);
-  const exps = biz.expenses.filter((x) => inR(x.date)), expTotal = sum(exps, (x) => Number(x.amount) || 0);
+  const exps = biz.expenses.filter((x) => inR(x.date)), expTotal = sum(exps, (x) => expMain(x));
   const profit = collected - expTotal;
   const byCust = Object.entries(docs.reduce((m, x) => ((m[x.customer || "—"] = (m[x.customer || "—"] || 0) + totals(x).total), m), {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const byCat = EXP_CATS.map((c) => [c, sum(exps.filter((x) => x.category === c), (x) => Number(x.amount) || 0)]).filter(([, v]) => v > 0);
+  const byCat = EXP_CATS.map((c) => [c, sum(exps.filter((x) => x.category === c), (x) => expMain(x))]).filter(([, v]) => v > 0);
   const months = [...Array(6)].map((_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 5 + i); return ym(d); }).map((m) => ({
     m, s: sum(biz.invoices.filter((x) => x.type === "invoice" && x.status !== "draft" && x.status !== "cancelled" && (x.currency || biz.currency) === biz.currency && (x.issueDate || "").startsWith(m)), (x) => totals(x).total),
-    e: sum(biz.expenses.filter((x) => x.date.startsWith(m)), (x) => Number(x.amount) || 0) }));
+    e: sum(biz.expenses.filter((x) => x.date.startsWith(m)), (x) => expMain(x)) }));
   const mx = Math.max(...months.flatMap((x) => [x.s, x.e]), 0);
   const due = getDue(biz), overdue = due.filter((d) => d.overdue);
   const staff = biz.employees.filter((e) => e.status !== "ended");

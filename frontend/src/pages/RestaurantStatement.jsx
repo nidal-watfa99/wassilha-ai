@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import Summary from "../components/Summary";
-import { useBiz, todayStr, fmt, payroll } from "../services/biz";
+import { useBiz, expMain, todayStr, fmt, payroll } from "../services/biz";
 import { orderCalc, productCost } from "../services/costing";
 import { ltr } from "../components/Form";
 
@@ -12,7 +12,7 @@ export default function RestaurantStatement() {
   const y = d.slice(0, 4), ym = d.slice(0, 7), dim = new Date(+y, +d.slice(5, 7), 0).getDate();
   const staff = biz.employees.filter((e) => e.status !== "ended"), monthlyPay = staff.reduce((a, e) => a + payroll(e).net, 0);
   const sum = (a, f) => a.reduce((s, x) => s + f(x), 0);
-  const opexIn = (pre) => sum(biz.expenses.filter((x) => x.date.startsWith(pre) && x.category !== "purchases" && x.category !== "salaries"), (x) => Number(x.amount) || 0);
+  const opexIn = (pre) => sum(biz.expenses.filter((x) => x.date.startsWith(pre) && x.category !== "purchases" && x.category !== "salaries"), (x) => expMain(x));
 
   const period = (inP, payFactor, opex) => {
     const orders = biz.orders.filter((o) => o.status === "paid" && inP((o.paidAt || "").slice(0, 10)));

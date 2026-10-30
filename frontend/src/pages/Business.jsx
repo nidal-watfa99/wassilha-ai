@@ -48,6 +48,7 @@ export default function Business() {
   const { t, locale, toast } = useApp();
   const biz = useBiz();
   const fileRef = useRef(null);
+  const [fxC, setFxC] = useState(""), [fxR, setFxR] = useState("");
   const set = (k, v) => update((s) => ({ ...s, [k]: v }));
   const setTerm = (k, v) => update((s) => ({ ...s, terms: { ...s.terms, [k]: v } }));
   const toggle = (m) => update((s) => ({ ...s, modules: { ...s.modules, [m]: s.modules[m] === false } }));
@@ -93,6 +94,15 @@ export default function Business() {
           <F label={t("bzTermContacts")}><input className="input" value={biz.terms.contacts || ""} onChange={(e) => setTerm("contacts", e.target.value)} /></F>
           <F label={t("bzTermProducts")}><input className="input" value={biz.terms.products || ""} onChange={(e) => setTerm("products", e.target.value)} /></F>
         </Grid>
+      </div>
+
+      <div className="glass card" style={{ display: "grid", gap: "0.5rem" }}>
+        <h3 style={{ margin: 0 }}>{t("fx_title")}</h3>
+        <p style={{ margin: 0, fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{t("fx_help")} ({biz.currency})</p>
+        <CurrencyPicker value={fxC} onChange={setFxC} />
+        <input className="input" type="number" min="0" step="any" dir="ltr" placeholder={`1 ${fxC || "…"} = ? ${biz.currency}`} value={fxR} onChange={(e) => setFxR(e.target.value)} />
+        <button className="btn btn-ghost btn-sm" style={{ justifySelf: "start" }} onClick={() => { if (fxC && fxC !== biz.currency && Number(fxR) > 0) { update((s) => ({ ...s, rates: { ...s.rates, [fxC]: Number(fxR) } })); setFxC(""); setFxR(""); } }}>{t("b_add")}</button>
+        {Object.entries(biz.rates).map(([c, r]) => <div key={c} style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: "0.3rem" }}><bdi dir="ltr">1 {c} = {r} {biz.currency}</bdi><button className="btn btn-ghost btn-sm" onClick={() => update((s) => { const { [c]: _, ...rest } = s.rates; return { ...s, rates: rest }; })}>✕</button></div>)}
       </div>
 
       <div className="glass card">

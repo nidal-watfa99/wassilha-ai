@@ -5,11 +5,12 @@ import { IconPlus, IconEdit, IconTrash, IconBox } from "../components/Icons";
 import { F, Grid, ltr, useForm } from "../components/Form";
 import Summary from "../components/Summary";
 import MediaView from "../components/MediaView";
-import { useBiz, upsert, remove, update, uid, fmt, nextNo, todayStr, totals, stockLeft } from "../services/biz";
+import { useBiz, upsert, remove, update, uid, fmt, nextNo, todayStr, totals, stockLeft, toMain } from "../services/biz";
 import { putMedia, delMedia, compressImage } from "../services/media";
 import { waPhone } from "../services/phone";
 import RecipeEditor from "../components/RecipeEditor";
-import { productCost, marginOf, usageMap, orderCalc } from "../services/costing";
+import CurrencyPicker from "../components/CurrencyPicker";
+import { productCost, marginOf, usageMap, orderCalc, parseOrderText } from "../services/costing";
 import RestaurantStatement from "./RestaurantStatement";
 const calc = orderCalc;
 const FLOWD = ["open", "preparing", "ready", "onway", "delivered"];
@@ -28,16 +29,26 @@ export default function Restaurant() {
   const fileRef = useRef(null), trash = useRef([]);
   const today = todayStr(), cur = biz.currency;
   const drivers = biz.employees.filter((e) => e.role === "driver" && e.status !== "ended");
-  const [zn, setZn] = useState(""), [zf, setZf] = useState("");
+  const [zn, setZn] = useState(""), [zf, setZf] = useState(""), [quick, setQuick] = useState("");
+  const pm = (m) => toMain(biz, m.price, m.currency);          // dish price in the main currency (null = no exchange rate set)
   const close = () => setModal(null);
   const open = (kind, x, init) => { trash.current = []; setF(x ? { ...x, lines: x.lines?.map((l) => ({ ...l })) } : init); setModal({ kind, x }); };
   const save = (coll, extra = {}) => (e) => { e.preventDefault(); upsert(coll, { id: modal.x?.id || uid(), ...(modal.x || {}), ...f, ...extra }); trash.current.forEach(delMedia); close(); };
 
   /* ---------- orders ---------- */
   const newOrder = (table = "") => open("order", null, { type: "dine", table, customer: "", phone: "", address: "", lines: [], discount: 0, service: 0, deliveryFee: "", driverCost: "", phone: "", zone: "", driver: "", deposit: 0, resId: "", tax: biz.taxRate, status: "open" });
-  const addLine = (m) => setF((p) => { const i = p.lines.findIndex((l) => l.menuId === m.id); return { ...p, lines: i >= 0 ? p.lines.map((l, k) => (k === i ? { ...l, qty: l.qty + 1 } : l)) : [...p.lines, { menuId: m.id, name: m.name, price: Number(m.price) || 0, qty: 1 }] }; });
+  const setLn = (i, patch) => setF((p) => ({ ...p, lines: p.lines.map((l, k) => (k === i ? { ...l, ...patch } : l)) }));
+  const applyQuick = () => {
+    const rows = parseOrderText(quick, biz.menuItems.filter((m) => m.available));
+    if (rows.some((r) => r.item && pm(r.item) == null)) toast(t("fx_missing"), "error");
+    setF((p) => ({ ...p, lines: [...p.lines, ...rows.map((r) => (r.item ? { menuId: r.item.id, name: r.item.name, price: pm(r.item) ?? 0, qty: r.qty } : { menuId: "", name: r.name, price: "", qty: r.qty, custom: true }))] }));
+    const unknown = rows.filter((r) => !r.item).length;
+    toast(`${rows.length - unknown} ✓${unknown ? ` · ${unknown} ${t("rs_customLeft")}` : ""}`, unknown ? "error" : "success"); setQuick("");
+  };
+  const addLine = (m) => { if (pm(m) == null) return toast(t("fx_missing"), "error"); addMenuLine(m); };
+  const addMenuLine = (m) => setF((p) => { const i = p.lines.findIndex((l) => l.menuId === m.id); return { ...p, lines: i >= 0 ? p.lines.map((l, k) => (k === i ? { ...l, qty: l.qty + 1 } : l)) : [...p.lines, { menuId: m.id, name: m.name, price: pm(m) ?? 0, qty: 1 }] }; });
   const qty = (i, d) => setF((p) => ({ ...p, lines: p.lines.map((l, k) => (k === i ? { ...l, qty: l.qty + d } : l)).filter((l) => l.qty > 0) }));
-  const saveOrder = (e) => { e.preventDefault(); if (!f.lines.length) return; upsert("orders", { ...(modal.x || { id: uid(), no: nextNo("order"), createdAt: new Date().toISOString(), date: today }), ...f }); close(); };
+  const saveOrder = (e) => { e.preventDefault(); const lines = f.lines.filter((l) => String(l.name).trim()); if (!lines.length) return; upsert("orders", { ...(modal.x || { id: uid(), no: nextNo("order"), createdAt: new Date().toISOString(), date: today }), ...f, lines }); close(); };
   const step = (o) => { const fl = flowOf(o); upsert("orders", { ...o, status: fl[fl.indexOf(o.status) + 1] }); };
   const seat = (r) => {
     const o = { id: uid(), no: nextNo("order"), createdAt: new Date().toISOString(), date: today, type: "dine", table: r.table || "", customer: r.name, phone: r.phone || "", address: "", lines: [], discount: 0, service: 0, deliveryFee: "", driverCost: "", zone: "", driver: "", deposit: Number(r.deposit) || 0, resId: r.id, tax: biz.taxRate, status: "open" };
@@ -93,7 +104,7 @@ export default function Restaurant() {
               <strong><bdi dir="ltr">{o.no}</bdi> · {t("rs_" + o.type)}{o.type === "dine" && o.table && ` · ${tName(o.table)}`}</strong>
               <span className="badge badge-violet">{t("rs_status_" + o.status)}</span>
             </div>
-            <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{o.lines.map((l) => `${l.qty}× ${l.name}`).join("، ")}</div>
+            <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{o.lines.map((l) => `${l.qty}× ${l.name}${l.note ? ` (${l.note})` : ""}`).join("، ")}{o.note && <div style={{ color: "var(--cyan)" }}>📝 {o.note}</div>}</div>
             {(o.phone || o.address || o.driver) && (
               <div style={{ display: "flex", gap: "0.4rem 0.8rem", flexWrap: "wrap", fontSize: "var(--text-sm)", alignItems: "center" }}>
                 {o.phone && <a href={`tel:${o.phone}`} dir="ltr" style={{ color: "inherit" }}>📞 {o.phone}</a>}
@@ -144,7 +155,7 @@ export default function Restaurant() {
       </>)}
 
       {tab === "menu" && (<>
-        <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => open("item", null, { name: "", category: "", price: "", cost: "", prep: "", options: "", description: "", available: true, recipe: [], extraCost: "", photo: "" })}><IconPlus />{t("rs_newItem")}</button>
+        <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => open("item", null, { name: "", category: "", price: "", cost: "", prep: "", options: "", description: "", available: true, currency: cur, recipe: [], extraCost: "", photo: "" })}><IconPlus />{t("rs_newItem")}</button>
         {biz.menuItems.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : (cats.length ? [...cats, ""] : [""]).map((c) => {
           const list = biz.menuItems.filter((m) => (m.category || "") === c); if (!list.length) return null;
           return <div key={c} style={{ display: "grid", gap: "0.5rem" }}>{c && <h3 style={{ margin: "0.4rem 0 0" }}>{c}</h3>}
@@ -152,8 +163,8 @@ export default function Restaurant() {
               {list.map((m) => (
                 <div key={m.id} className="glass card" style={{ padding: "0.6rem", display: "grid", gap: "0.3rem", cursor: "pointer", opacity: m.available ? 1 : 0.55 }} onClick={() => open("item", m)}>
                   {m.photo ? <MediaView id={m.photo} type="image" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 10 }} /> : <div style={{ aspectRatio: "4/3", display: "grid", placeItems: "center", background: "rgba(255,255,255,.04)", borderRadius: 10 }}><IconBox /></div>}
-                  <strong style={{ fontSize: "var(--text-sm)" }}>{m.name}</strong><b dir="ltr" style={{ textAlign: "start" }}>{fmt(m.price)} {cur}</b>
-                  <small style={{ color: "var(--text-3)" }}>{t("cat_margin")}: {fmt(marginOf(m.price, productCost(m, biz)).pct)}%</small>
+                  <strong style={{ fontSize: "var(--text-sm)" }}>{m.name}</strong><b dir="ltr" style={{ textAlign: "start" }}>{fmt(m.price)} {m.currency || cur}</b>
+                  <small style={{ color: "var(--text-3)" }}>{t("cat_margin")}: {pm(m) == null ? "—" : `${fmt(marginOf(pm(m), productCost(m, biz)).pct)}%`}</small>
                   {!m.available && <span className="badge badge-red">{t("rs_unavail")}</span>}
                 </div>))}
             </div></div>; })}
@@ -196,8 +207,23 @@ export default function Restaurant() {
             </Grid>
             <p style={{ margin: "0.4rem 0", fontSize: "var(--text-sm)", color: "var(--text-3)" }}>{t("rs_addItem")}</p>
             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>{biz.menuItems.filter((m) => m.available).map((m) => <button type="button" key={m.id} className="btn btn-ghost btn-sm" onClick={() => addLine(m)}>{m.name} · {fmt(m.price)}</button>)}</div>
-            {f.lines.map((l, i) => <div key={l.menuId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.35rem 0", borderTop: "1px solid var(--border)" }}>
-              <span>{l.name}</span><span style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}><button type="button" className="icon-btn" onClick={() => qty(i, -1)}>−</button><b>{l.qty}</b><button type="button" className="icon-btn" onClick={() => qty(i, 1)}>+</button><bdi dir="ltr">{fmt(l.qty * l.price)}</bdi></span></div>)}
+            <F label={t("rs_quick")} wide><textarea className="textarea" rows={2} placeholder={t("rs_quickPh")} value={quick} onChange={(e) => setQuick(e.target.value)} /></F>
+            <button type="button" className="btn btn-ghost btn-sm" disabled={!quick.trim()} onClick={applyQuick}>{t("rs_parse")}</button>
+            {f.lines.map((l, i) => (
+              <div key={i} className="glass card" style={{ padding: "0.5rem", display: "grid", gap: "0.35rem", margin: "0.4rem 0" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 96px", gap: "0.4rem" }}>
+                  <input className="input" value={l.name} placeholder={t("stk_name")} onChange={(e) => setLn(i, { name: e.target.value })} />
+                  <input className="input" type="number" min="0" step="any" dir="ltr" placeholder={t("inv_price")} value={l.price} onChange={(e) => setLn(i, { price: e.target.value })} />
+                </div>
+                <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                  <input className="input" style={{ flex: 1, minWidth: 0 }} placeholder={t("rs_lineNote")} value={l.note || ""} onChange={(e) => setLn(i, { note: e.target.value })} />
+                  <button type="button" className="icon-btn" onClick={() => qty(i, -1)}>−</button><b>{l.qty}</b><button type="button" className="icon-btn" onClick={() => qty(i, 1)}>+</button>
+                  <bdi dir="ltr" style={{ minWidth: 56, textAlign: "end" }}>{fmt((Number(l.qty) || 0) * (Number(l.price) || 0))}</bdi>
+                </div>
+              </div>
+            ))}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setF((p) => ({ ...p, lines: [...p.lines, { menuId: "", name: "", price: "", qty: 1, custom: true }] }))}><IconPlus />{t("rs_custom")}</button>
+            <F label={t("rs_orderNote")} wide><input className="input" value={f.note || ""} onChange={set("note")} /></F>
             <Grid><F label={t("rs_serviceP")}><input className="input" type="number" min="0" step="any" value={f.service} onChange={set("service")} {...ltr} /></F>
               <F label={t("rs_discount")}><input className="input" type="number" min="0" max="100" step="any" value={f.discount} onChange={set("discount")} {...ltr} /></F>
               <F label={t("inv_tax")}><input className="input" type="number" min="0" max="100" step="any" value={f.tax} onChange={set("tax")} {...ltr} /></F></Grid>
@@ -228,7 +254,8 @@ export default function Restaurant() {
         <Grid>
           <F label={t("stk_name") + " *"} wide><input className="input" required value={f.name} onChange={set("name")} /></F>
           <F label={t("rs_cat")}><input className="input" list="mc" value={f.category} onChange={set("category")} /><datalist id="mc">{cats.map((c) => <option key={c} value={c} />)}</datalist></F>
-          <F label={t("stk_price") + ` (${cur})`}><input className="input" type="number" min="0" step="any" required value={f.price} onChange={set("price")} {...ltr} /></F>
+          <F label={t("currency")}><CurrencyPicker value={f.currency || cur} onChange={(v) => setF((p) => ({ ...p, currency: v }))} /></F>
+          <F label={t("stk_price")}><input className="input" type="number" min="0" step="any" required value={f.price} onChange={set("price")} {...ltr} /></F>
           <F label={t("stk_cost")}><input className="input" type="number" min="0" step="any" value={f.cost} onChange={set("cost")} {...ltr} /></F>
           <F label={t("rs_prep")}><input className="input" type="number" min="0" value={f.prep} onChange={set("prep")} {...ltr} /></F>
           <F label={t("rs_avail")}><select className="select" value={f.available ? "1" : ""} onChange={(e) => setF((p) => ({ ...p, available: !!e.target.value }))}><option value="1">{t("rs_avail")}</option><option value="">{t("rs_unavail")}</option></select></F>
@@ -237,7 +264,8 @@ export default function Restaurant() {
         </Grid>
         <h4 style={{ margin: "0.9rem 0 0.4rem" }}>{t("rc_title")}</h4>
         <RecipeEditor value={f} cur={cur} onChange={(p) => setF((x) => ({ ...x, ...p }))} />
-        <div style={{ margin: "0.7rem 0" }}><Summary cur={cur} rows={[{ label: t("stk_price"), value: Number(f.price) || 0, sub: true }, { label: t("rc_cost"), value: productCost(f, biz), tone: "minus" }, { label: "%", text: `${fmt(marginOf(f.price, productCost(f, biz)).pct)}%`, tone: "muted" }]} total={{ label: t("cat_margin"), value: marginOf(f.price, productCost(f, biz)).amount }} /></div>
+        <div style={{ margin: "0.7rem 0" }}><Summary cur={cur} rows={[{ label: t("stk_price"), value: pm(f) ?? 0, sub: true }, { label: t("rc_cost"), value: productCost(f, biz), tone: "minus" }, { label: "%", text: `${fmt(marginOf(pm(f) ?? 0, productCost(f, biz)).pct)}%`, tone: "muted" }]} total={{ label: t("cat_margin"), value: marginOf(pm(f) ?? 0, productCost(f, biz)).amount }} />
+        {pm(f) == null && <div style={{ color: "#ff8a9b", fontSize: "var(--text-sm)" }}>⚠ {t("fx_missing")}</div>}</div>
         <Foot t={t} onCancel={close} /></form></Modal>}
 
       {pay && <Modal title={`${t("rs_pay")} — ${pay.no}`} onClose={() => setPay(null)}>

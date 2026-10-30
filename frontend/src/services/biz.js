@@ -32,7 +32,7 @@ const TERMS = {
 
 const DEFAULT = {
   configured: false, type: "custom", name: "", currency: "USD", taxRate: 0, reminderDays: 3,
-  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, menuItems: [], tables: [], reservations: [], orders: [], purchases: [], waste: [], zones: [], seq: { invoice: 0, employee: 0, quote: 0, order: 0, purchase: 0 },
+  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, menuItems: [], tables: [], reservations: [], orders: [], purchases: [], waste: [], zones: [], rates: {}, seq: { invoice: 0, employee: 0, quote: 0, order: 0, purchase: 0 },
 };
 
 const mem = {};
@@ -79,6 +79,10 @@ export function applyPreset(type, locale, { name, currency, taxRate }) {
     modules, terms: { contacts: tr[0], products: tr[1] },
   }));
 }
+
+/* ---------- exchange rates: 1 unit of a currency = rates[cur] units of the main currency (typed by the user, never guessed) ---------- */
+export const toMain = (biz, amount, cur) => (!cur || cur === biz.currency ? Number(amount) || 0 : biz.rates[cur] > 0 ? (Number(amount) || 0) * biz.rates[cur] : null);
+export const expMain = (x) => (x.amountMain != null ? Number(x.amountMain) || 0 : Number(x.amount) || 0);
 
 /* ---------- payroll ---------- */
 export function payroll(e) {

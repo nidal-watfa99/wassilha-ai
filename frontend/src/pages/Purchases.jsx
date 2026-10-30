@@ -3,13 +3,14 @@ import { api } from "../services/api";
 import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconTrash } from "../components/Icons";
+import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, ltr, useForm } from "../components/Form";
 import Summary from "../components/Summary";
 import { useBiz, upsert, remove, update, uid, fmt, nextNo, todayStr, stockLeft } from "../services/biz";
 import { convert, compatible, unitLabel } from "../services/units";
 
 const REASONS = ["expired", "spoiled", "damaged", "prep", "other"];
-const pTotal = (p) => p.lines.reduce((a, l) => a + (Number(l.qty) || 0) * (Number(l.price) || 0), 0);
+const pTotal = (p) => p.lines.reduce((a, l) => a + (Number(l.qty) || 0) * (Number(l.price) || 0), 0) * (Number(p.rate) || 1);   // always in the main currency
 
 export default function Purchases() {
   const { t, locale, toast } = useApp();
@@ -26,12 +27,14 @@ export default function Purchases() {
     e.preventDefault();
     const lines = f.lines.filter((l) => inv(l.invId) && Number(l.qty) > 0);
     if (!lines.length) return;
-    const p = { id: uid(), no: nextNo("purchase"), date: f.date, supplier: f.supplier, notes: f.notes, lines, paid: Math.min(Number(f.paid) || 0, pTotal({ lines })) };
+    const foreign = (f.currency || cur) !== cur, rate = foreign ? Number(f.rate) || 0 : 1;
+    if (!rate) return toast(t("fx_missing"), "error");
+    const p = { id: uid(), no: nextNo("purchase"), date: f.date, supplier: f.supplier, notes: f.notes, lines, currency: f.currency || cur, rate, paid: Math.min(Number(f.paid) || 0, pTotal({ lines, rate })) };
     update((s) => ({ ...s, inventory: s.inventory.map((it) => {
       const mine = lines.filter((l) => l.invId === it.id); if (!mine.length) return it;
       let left = Math.max(stockLeft(it), 0), cost = Number(it.cost) || 0, add = 0;
       mine.forEach((l) => {                                    // weighted-average cost, everything in the item's own unit
-        const k = l.unit && it.unit && l.unit !== it.unit ? convert(1, l.unit, it.unit) : 1, q = (Number(l.qty) || 0) * (k || 1), unitPrice = (Number(l.price) || 0) / (k || 1);
+        const k = l.unit && it.unit && l.unit !== it.unit ? convert(1, l.unit, it.unit) : 1, q = (Number(l.qty) || 0) * (k || 1), unitPrice = ((Number(l.price) || 0) * rate) / (k || 1);
         cost = left + q > 0 ? (left * cost + q * unitPrice) / (left + q) : unitPrice; left += q; add += q;
       });
       return { ...it, qtyIn: (Number(it.qtyIn) || 0) + add, cost: +cost.toFixed(6) };
@@ -75,7 +78,7 @@ export default function Purchases() {
       </div>
 
       {tab === "buy" && (<>
-        <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => { setF({ date: today, supplier: "", notes: "", paid: "", lines: [{ invId: "", qty: "", unit: "", price: "" }] }); setModal("buy"); }}><IconPlus />{t("pu_new")}</button>
+        <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => { setF({ date: today, supplier: "", notes: "", paid: "", currency: cur, rate: "", lines: [{ invId: "", qty: "", unit: "", price: "" }] }); setModal("buy"); }}><IconPlus />{t("pu_new")}</button>
         {biz.purchases.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : biz.purchases.map((p) => (
           <div key={p.id} className="glass card" style={{ display: "grid", gap: "0.4rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><strong><bdi dir="ltr">{p.no}</bdi> · {p.supplier || "—"}</strong><bdi dir="ltr">{p.date}</bdi></div>
@@ -102,6 +105,8 @@ export default function Purchases() {
 
       {modal === "buy" && <Modal wide title={t("pu_new")} onClose={() => setModal(null)}><form onSubmit={savePurchase}>
         <Grid><F label={t("rs_date")}><input className="input" type="date" required value={f.date} onChange={set("date")} {...ltr} /></F>
+          <F label={t("currency")}><CurrencyPicker value={f.currency || cur} onChange={(v) => setF((s) => ({ ...s, currency: v, rate: v === cur ? "" : biz.rates[v] || "" }))} /></F>
+          {(f.currency || cur) !== cur && <F label={`1 ${f.currency} = ? ${cur}`}><input className="input" type="number" min="0" step="any" required value={f.rate || ""} onChange={set("rate")} {...ltr} /></F>}
           <F label={t("pu_supplier")}><input className="input" list="sup" value={f.supplier} onChange={set("supplier")} /><datalist id="sup">{contacts.map((c) => <option key={c.id} value={c.name} />)}</datalist></F></Grid>
         <h4 style={{ margin: "0.8rem 0 0.4rem" }}>{t("inv_items")}</h4>
         {f.lines.map((l, i) => { const it = inv(l.invId); return (

@@ -1,5 +1,7 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+fx_title: "Exchange rates", fx_help: "Type the rate yourself for any other currency you use. Amounts in those currencies are converted to the main currency with the rate saved on each record.", fx_missing: "Set the exchange rate for this currency first (Business setup → Exchange rates, or type it in the form).",
+  rs_quick: "Quick entry — type the whole order", rs_quickPh: "2 shawarma, pepsi x3, 1 falafel", rs_parse: "Add to order", rs_custom: "Custom item", rs_lineNote: "Note (no onions…)", rs_orderNote: "Order note for the kitchen", rs_customLeft: "custom — set price",
 rs_stmt: "Daily statement", rs_nextd_ready: "Out for delivery", rs_nextd_onway: "Delivered", rs_status_onway: "On the way", rs_status_delivered: "Delivered",
   rs_seat: "Seated → open order", rs_due: "Due now", rs_zone: "Delivery zone", rs_zones: "Delivery zones & fees", rs_driver: "Driver", rs_drivers: "Drivers & active deliveries", rs_unassigned: "Unassigned",
   rs_noDrivers: "No drivers yet. Add an employee and set his role to Driver.",
@@ -110,6 +112,8 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+fx_title: "أسعار الصرف", fx_help: "اكتب بنفسك سعر أي عملة أخرى تتعامل بها. تُحوَّل مبالغ هذه العملات إلى العملة الأساسية بالسعر المحفوظ مع كل عملية.", fx_missing: "حدّد سعر صرف هذه العملة أولاً (إعداد النشاط ← أسعار الصرف، أو اكتبه في النموذج).",
+  rs_quick: "إدخال سريع — اكتب الطلب كله", rs_quickPh: "2 شاورما، بيبسي x3، 1 فلافل", rs_parse: "إضافة إلى الطلب", rs_custom: "صنف حر", rs_lineNote: "ملاحظة (بدون بصل…)", rs_orderNote: "ملاحظة الطلب للمطبخ", rs_customLeft: "أصناف حرة — حدّد سعرها",
 rs_stmt: "الجرد اليومي", rs_nextd_ready: "خرج للتوصيل", rs_nextd_onway: "تم التسليم", rs_status_onway: "في الطريق", rs_status_delivered: "تم التسليم",
   rs_seat: "جلسوا ← فتح طلب", rs_due: "المستحق الآن", rs_zone: "منطقة التوصيل", rs_zones: "مناطق وأجور التوصيل", rs_driver: "السائق", rs_drivers: "السائقون والتوصيلات الجارية", rs_unassigned: "بلا سائق",
   rs_noDrivers: "لا يوجد سائقون بعد. أضف موظفاً واجعل دوره سائقاً.",
