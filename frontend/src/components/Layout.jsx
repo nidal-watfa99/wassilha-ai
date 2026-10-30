@@ -26,6 +26,8 @@ const NAV = [
   { to: "/products", key: "products", Icon: IconBox },
   { to: "/calculator", key: "calculator", Icon: IconCalc },
   { to: "/ai-models", key: "aimodels", Icon: IconSpark },
+  { to: "/restaurant", key: "restaurant", Icon: IconBox },
+  { to: "/purchases", key: "purchases", Icon: IconBox },
   { to: "/expenses", key: "expenses", Icon: IconChart },
   { to: "/reports", key: "reports", Icon: IconChart },
   { to: "/catalog", key: "catalog", Icon: IconBox },

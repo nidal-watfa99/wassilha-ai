@@ -42,7 +42,7 @@ export function SetupWizard({ onClose }) {
   );
 }
 
-const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory", catalog: "catalog", expenses: "expenses", reports: "reports", aimodels: "aimodels" };
+const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory", catalog: "catalog", expenses: "expenses", reports: "reports", aimodels: "aimodels", restaurant: "restaurant", purchases: "purchases" };
 
 export default function Business() {
   const { t, locale, toast } = useApp();

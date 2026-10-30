@@ -12,7 +12,7 @@ const BLANK = {
   phone: "", email: "", address: "", ecName: "", ecPhone: "",
   jobTitle: "", department: "", branch: "", manager: "", empType: "full_time", hireDate: "", contractEnd: "", workHours: "", leaveBalance: "",
   payType: "monthly", salary: "", currency: "", payMethod: "", insuranceNo: "", status: "active", skills: "", notes: "",
-  level: "employee", taxRate: "", ssNo: "", health: "", injury: "", adj: [],
+  role: "", level: "employee", taxRate: "", ssNo: "", health: "", injury: "", adj: [],
 };
 
 export default function Employees() {
@@ -118,6 +118,7 @@ export default function Employees() {
             <Sec>{t("emp_sec_job")}</Sec>
             <Grid>
               <F label={t("emp_title")}><input className="input" value={f.jobTitle} onChange={set("jobTitle")} /></F>
+              <F label={t("role_label")}><select className="select" value={f.role || ""} onChange={set("role")}><option value="">—</option>{["manager", "chef", "sous", "waiter", "cashier", "cleaner", "driver", "dishwasher", "other"].map((k) => <option key={k} value={k}>{t("role_" + k)}</option>)}</select></F>
               <F label={t("emp_dept")}><input className="input" value={f.department} onChange={set("department")} /></F>
               <F label={t("emp_branch")}><input className="input" value={f.branch} onChange={set("branch")} /></F>
               <F label={t("emp_manager")}>

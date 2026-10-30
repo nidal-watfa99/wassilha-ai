@@ -752,3 +752,6 @@ table.data tr:hover td { background: rgba(21, 30, 44, 0.35); }
 .lang-pop { position: absolute; inset-inline-end: 0; top: calc(100% + 6px); min-width: 150px; margin: 0; padding: .3rem; list-style: none; background: #0c1220; border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 14px 34px rgba(0,0,0,.55); z-index: 70; }
 .lang-pop button { display: flex; width: 100%; justify-content: space-between; gap: 1rem; padding: .55rem .7rem; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .lang-pop button[aria-selected="true"], .lang-pop button:hover { background: rgba(54,139,255,.22); }
+
+.header-brand .header-page { font-size: 0.72rem !important; font-weight: 500 !important; line-height: 1.2 !important; color: var(--text-3) !important; }
+.tabs { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .2rem; }

@@ -7,6 +7,8 @@ import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
 import { useBiz, upsert, remove, uid, fmt, nextNo, todayStr, stockLeft } from "../services/biz";
+import RecipeEditor from "../components/RecipeEditor";
+import { productCost } from "../services/costing";
 import Summary from "../components/Summary";
 import UnitPicker from "../components/UnitPicker";
 import { unitLabel } from "../services/units";
@@ -15,7 +17,7 @@ import { putMedia, getMedia, delMedia, compressImage } from "../services/media";
 const BLANK = {
   name: "", sku: "", category: "", brand: "", unit: "", status: "available", featured: false, description: "", variants: "", tags: "", warranty: "",
   currency: "", price: "", wholesale: "", cost: "", minOrder: "", offerLabel: "", offerPct: "", offerPrice: "", offerFrom: "", offerTo: "",
-  invId: "", supplier: "", links: "", media: [], customers: [],
+  invId: "", recipe: [], extraCost: "", supplier: "", links: "", media: [], customers: [],
 };
 const ST = ["available", "unavailable", "coming", "hidden"];
 
@@ -89,7 +91,7 @@ export default function Catalog() {
       (!s || [p.name, p.sku, p.brand, p.category, p.tags].some((v) => String(v || "").toLowerCase().includes(s))));
   }, [biz.catalog, q, cat, tab]);
   const inv = (p) => biz.inventory.find((i) => i.id === p.invId);
-  const pr = priceNow(f), invItem = inv(f);
+  const pr = priceNow(f), invItem = inv(f), effCost = productCost(f, biz);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -164,10 +166,12 @@ export default function Catalog() {
               { label: t("stk_price"), value: pr.base, sub: true },
               pr.offer && { label: f.offerLabel || t("cat_offer"), value: pr.base - pr.now, tone: "minus" },
             ]} total={{ label: t("cat_priceNow"), value: pr.now }} />
-              {Number(f.cost) > 0 && <div style={{ marginTop: "0.6rem" }}><Summary cur={f.currency || biz.currency} rows={[
-                { label: t("cat_priceNow"), value: pr.now }, { label: t("stk_cost"), value: Number(f.cost), tone: "minus" },
-                { label: "%", text: `${fmt(((pr.now - Number(f.cost)) / (pr.now || 1)) * 100)}%`, tone: "muted" },
-              ]} total={{ label: t("cat_margin"), value: pr.now - Number(f.cost) }} /></div>}</div>
+              {effCost > 0 && <div style={{ marginTop: "0.6rem" }}><Summary cur={f.currency || biz.currency} rows={[
+                { label: t("cat_priceNow"), value: pr.now }, { label: t("stk_cost"), value: effCost, tone: "minus" },
+                { label: "%", text: `${fmt(((pr.now - effCost) / (pr.now || 1)) * 100)}%`, tone: "muted" },
+              ]} total={{ label: t("cat_margin"), value: pr.now - effCost }} /></div>}</div>
+            <Sec>{t("rc_title")}</Sec>
+            <RecipeEditor value={f} cur={f.currency || biz.currency} onChange={(p) => setF((s) => ({ ...s, ...p }))} />
             <Sec>{t("inventory")}</Sec>
             <F label={t("cat_linkStock")}><select className="select" value={f.invId} onChange={set("invId")}><option value="">—</option>{biz.inventory.map((i) => <option key={i.id} value={i.id}>{i.name} ({stockLeft(i)})</option>)}</select></F>
             {invItem && <div style={{ fontSize: "var(--text-sm)" }}>{t("stk_left")}: <b>{stockLeft(invItem)} {invItem.unit}</b></div>}
