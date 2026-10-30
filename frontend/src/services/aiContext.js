@@ -1,6 +1,7 @@
 /* Builds the assistant's system prompt: what the app is, what it may and may not do,
    and a snapshot of the user's real figures. Every number is computed here in code, never by the model.
    Only aggregates are included (no phone numbers, no per-employee salaries). */
+import { getExpiring } from "./realestate";
 import { getBiz, expMain, totals, paidOf, leftOf, fmt, getDue, getLow, stockLeft, payroll } from "./biz";
 
 export function buildSystemPrompt(extra = {}) {
@@ -21,6 +22,7 @@ export function buildSystemPrompt(extra = {}) {
     `Inventory: ${b.inventory.length} items; low or out of stock: ${low.length}` + (low.length ? " → " + low.slice(0, 8).map((i) => `${i.name} (${stockLeft(i)} left)`).join(", ") : ""),
     `Product catalog: ${b.catalog.length} products`,
     `Employees (not terminated): ${staff.length}; total net payroll this period: ${fmt(sum(staff, (e) => payroll(e).net))}`,
+    `Properties: ${b.props.length} buildings, ${b.units.length} units, ${b.leases.filter((l) => l.status === "active").length} active leases, ${getExpiring(b).length} expiring soon`,
     `Map places saved: ${b.places.length}`,
     `Contacts: ${extra.contacts ?? "?"} · open tasks: ${extra.tasksOpen ?? "?"} · documents: ${extra.documents ?? "?"}`,
   ];

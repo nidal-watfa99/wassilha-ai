@@ -60,11 +60,16 @@ export default function MapPage() {
       d.children[0].textContent = p.name; d.children[1].textContent = t("map_" + p.kind); d.children[2].textContent = p.phone || "";
       mk.bindPopup(d);
     });
-  }, [biz.places, filter, draft?.id, t]); // eslint-disable-line
+    biz.props.filter((b) => b.lat !== "" && b.lat != null && b.lng !== "" && (filter === "all" || filter === "building")).forEach((b) => {   // buildings from the Properties section
+      const mk = L.marker([+b.lat, +b.lng], { icon: pin("#f97316") }).addTo(g), d = document.createElement("div");
+      d.innerHTML = "<b></b><div></div>"; d.children[0].textContent = b.name; d.children[1].textContent = t("pr_b_" + b.type); mk.bindPopup(d);
+    });
+  }, [biz.places, biz.props, filter, draft?.id, t]); // eslint-disable-line
 
   // fit to markers on first load
   useEffect(() => {
-    if (biz.places.length) map.current.fitBounds(L.latLngBounds(biz.places.map((p) => [p.lat, p.lng])), { padding: [40, 40], maxZoom: 15 });
+    const pts = [...biz.places.map((p) => [p.lat, p.lng]), ...biz.props.filter((b) => b.lat !== "" && b.lat != null && b.lng !== "").map((b) => [+b.lat, +b.lng])];
+    if (pts.length) map.current.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 15 });
   }, []); // eslint-disable-line
 
   // draggable draft marker
@@ -158,7 +163,7 @@ export default function MapPage() {
       <div className="section-title">
         <h3 style={{ margin: 0 }}>{t("map_list")} ({shown.length})</h3>
         <select className="select" style={{ width: "auto" }} value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="all">{t("map_filter")}</option>{KINDS.map((k) => <option key={k} value={k}>{t("map_" + k)}</option>)}
+          <option value="all">{t("map_filter")}</option><option value="building">{t("pr_buildings")}</option>{KINDS.map((k) => <option key={k} value={k}>{t("map_" + k)}</option>)}
         </select>
       </div>
       {shown.length === 0 && <div className="empty-state"><IconMap /><p style={{ margin: 0 }}>{t("b_none")}</p></div>}
