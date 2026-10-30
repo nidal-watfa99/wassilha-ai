@@ -1,5 +1,17 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+pr_bills: "Utility bills", pr_shared: "Shared services", pr_gen: "Create units in bulk", pr_fromFloor: "From floor", pr_toFloor: "To floor", pr_perFloor: "Units per floor", pr_prefix: "Prefix (optional)", pr_created: "units created",
+  pr_genHelp: "Existing numbers are skipped. Numbering: floor + two digits →", pr_furnished: "Furnishing", pr_f_furnished: "Furnished", pr_f_unfurnished: "Unfurnished", pr_rooms: "rooms", pr_dupUnit: "This unit number already exists in this building.",
+  pr_u_suite: "Suite", pr_u_room: "Room", pr_u_roof: "Roof", pr_u_parking: "Parking spot", pr_chargeShared: "Pays shared services (cleaning…)", pr_chargeUtils: "Pays shared utility bills", pr_notCharged: "Not charged (per contract)",
+  pr_newBill: "New utility bill", pr_wholeBuilding: "Whole building (shared meter)", pr_ut_electricity: "Electricity", pr_ut_water: "Water", pr_ut_gas: "Gas", pr_ut_comm: "Phone / internet", pr_ut_other: "Other",
+  pr_period: "Period", pr_provider: "Provider", pr_prev: "Previous reading", pr_curr: "Current reading", pr_rate: "Price per unit", pr_basis: "Split basis", pr_b_area: "By area", pr_b_equal: "Equally", pr_b_rent: "By rent",
+  pr_consumed: "consumed", pr_useCalc: "Use this amount", pr_badReading: "Current reading is lower than the previous one.", pr_payProv: "Record payment to provider", pr_paidProv: "Paid to provider",
+  pr_chargeTenants: "Bill tenants", pr_billedTo: "Billed to", pr_noTenants: "No active tenant found for this bill's period.", pr_delBill: "Delete this bill? Invoices already issued to tenants are not removed.",
+  pr_billsNote: "Paying the provider records an expense (utilities). Billing tenants issues one invoice per tenant. Do both if the owner pays first and recovers the cost.",
+  pr_newShared: "New shared service", pr_sk_cleaning: "Cleaning", pr_sk_security: "Security", pr_sk_elevator: "Elevator / maintenance", pr_sk_garden: "Garden", pr_sk_other: "Other", pr_source: "Cost source", pr_manual: "Fixed monthly amount",
+  pr_fromStaff: "From cleaners' payroll", pr_monthlyCost: "Monthly cost", pr_staffHelp: "Net payroll of employees with role Cleaner assigned to this building:", pr_billShared: "Bill shared services",
+  pr_totalCost: "Total shared cost", pr_billedTenants: "Billed to tenants", pr_ownerPays: "Absorbed by owner (vacant / not charged)",
+  pr_sharedNote: "Cleaning staff are employees (role Cleaner, assigned to a building). Their payroll is already counted in the payroll, so billing tenants is income recovery, not a second expense.",
 pr_pickMap: "Pick location on map", pr_showMap: "Show on map", pr_useLoc: "Use this location",
 properties: "Properties", type_realestate: "Real estate / mall", pr_over: "Overview", pr_units: "Units", pr_leases: "Leases", pr_buildings: "Buildings",
   pr_occupancy: "Occupancy", pr_rentRoll: "Monthly rent roll", pr_perM2: "Rent per m² (occupied)", pr_vacant: "Vacant units", pr_noRate: "active leases excluded: no exchange rate for their currency",
@@ -126,6 +138,18 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+pr_bills: "فواتير الخدمات", pr_shared: "الخدمات المشتركة", pr_gen: "إنشاء وحدات دفعة واحدة", pr_fromFloor: "من الطابق", pr_toFloor: "إلى الطابق", pr_perFloor: "عدد الوحدات في الطابق", pr_prefix: "بادئة (اختياري)", pr_created: "وحدة أُنشئت",
+  pr_genHelp: "الأرقام الموجودة تُتخطّى. الترقيم: رقم الطابق + رقمان →", pr_furnished: "التأثيث", pr_f_furnished: "مفروشة", pr_f_unfurnished: "فارغة (غير مفروشة)", pr_rooms: "غرف", pr_dupUnit: "رقم الوحدة هذا موجود في المبنى.",
+  pr_u_suite: "جناح", pr_u_room: "غرفة", pr_u_roof: "روف", pr_u_parking: "موقف سيارة", pr_chargeShared: "يتحمل الخدمات المشتركة (النظافة…)", pr_chargeUtils: "يتحمل فواتير الخدمات المشتركة", pr_notCharged: "لا يُحمَّل (حسب العقد)",
+  pr_newBill: "فاتورة خدمة جديدة", pr_wholeBuilding: "كل المبنى (عداد مشترك)", pr_ut_electricity: "كهرباء", pr_ut_water: "ماء", pr_ut_gas: "غاز", pr_ut_comm: "هاتف / إنترنت", pr_ut_other: "أخرى",
+  pr_period: "الفترة", pr_provider: "الجهة المزوِّدة", pr_prev: "القراءة السابقة", pr_curr: "القراءة الحالية", pr_rate: "سعر الوحدة", pr_basis: "أساس التوزيع", pr_b_area: "حسب المساحة", pr_b_equal: "بالتساوي", pr_b_rent: "حسب الإيجار",
+  pr_consumed: "استهلاك", pr_useCalc: "اعتمد هذا المبلغ", pr_badReading: "القراءة الحالية أقل من السابقة.", pr_payProv: "تسجيل الدفع للمزوّد", pr_paidProv: "مدفوعة للمزوّد",
+  pr_chargeTenants: "تحميل على المستأجرين", pr_billedTo: "حُمّلت على", pr_noTenants: "لا يوجد مستأجر ساري لفترة هذه الفاتورة.", pr_delBill: "حذف هذه الفاتورة؟ الفواتير التي أُصدرت للمستأجرين لا تُحذف.",
+  pr_billsNote: "الدفع للمزوّد يسجّل مصروفاً (خدمات). وتحميل المستأجرين يصدر فاتورة لكل مستأجر. نفّذ الاثنين إن دفع المالك أولاً ثم استرد التكلفة.",
+  pr_newShared: "خدمة مشتركة جديدة", pr_sk_cleaning: "نظافة", pr_sk_security: "حراسة", pr_sk_elevator: "مصعد / صيانة", pr_sk_garden: "حديقة", pr_sk_other: "أخرى", pr_source: "مصدر التكلفة", pr_manual: "مبلغ شهري ثابت",
+  pr_fromStaff: "من رواتب عمال النظافة", pr_monthlyCost: "التكلفة الشهرية", pr_staffHelp: "صافي رواتب الموظفين بدور (عامل تنظيف) المعيّنين لهذا المبنى:", pr_billShared: "تحميل الخدمات المشتركة",
+  pr_totalCost: "إجمالي التكلفة المشتركة", pr_billedTenants: "المحمَّل على المستأجرين", pr_ownerPays: "يتحمله المالك (الشاغر / غير المحمَّل)",
+  pr_sharedNote: "عمال النظافة موظفون (دور: عامل تنظيف، ومعيّنون لمبنى). ورواتبهم محسوبة أصلاً في الرواتب، فتحميل المستأجرين استرداد للتكلفة وليس مصروفاً ثانياً.",
 pr_pickMap: "حدد الموقع على الخريطة", pr_showMap: "عرض على الخريطة", pr_useLoc: "اعتمد هذا الموقع",
 properties: "العقارات", type_realestate: "عقارات / مول", pr_over: "نظرة عامة", pr_units: "الوحدات", pr_leases: "العقود", pr_buildings: "المباني",
   pr_occupancy: "نسبة الإشغال", pr_rentRoll: "الإيجار الشهري الجاري", pr_perM2: "الإيجار للمتر المربع (المشغول)", pr_vacant: "وحدات شاغرة", pr_noRate: "عقود جارية مستثناة: لا سعر صرف لعملتها",

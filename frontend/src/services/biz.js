@@ -34,7 +34,7 @@ const TERMS = {
 
 const DEFAULT = {
   configured: false, type: "custom", name: "", currency: "USD", taxRate: 0, reminderDays: 3,
-  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, menuItems: [], tables: [], reservations: [], orders: [], purchases: [], waste: [], zones: [], rates: {}, props: [], units: [], leases: [], leaseDays: 60, seq: { invoice: 0, employee: 0, quote: 0, order: 0, purchase: 0, lease: 0 },
+  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, menuItems: [], tables: [], reservations: [], orders: [], purchases: [], waste: [], zones: [], rates: {}, props: [], units: [], leases: [], utils: [], shared: [], leaseDays: 60, seq: { invoice: 0, employee: 0, quote: 0, order: 0, purchase: 0, lease: 0 },
 };
 
 const mem = {};
