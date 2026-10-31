@@ -11,6 +11,7 @@ import {
 } from "./Icons";
 import { useBiz, isOn, getDue, getLow } from "../services/biz";
 import { getExpiring } from "../services/realestate";
+import { getExpiring as getExpBatches } from "../services/distribution";
 import { SetupWizard } from "../pages/Business";
 import { LOCALES } from "../i18n";
 import { LOCAL_MODE } from "../services/api";
@@ -29,6 +30,7 @@ const NAV = [
   { to: "/ai-models", key: "aimodels", Icon: IconSpark },
   { to: "/restaurant", key: "restaurant", Icon: IconBox },
   { to: "/purchases", key: "purchases", Icon: IconBox },
+  { to: "/distribution", key: "distribution", Icon: IconBox },
   { to: "/hotel", key: "hotel", Icon: IconBox },
   { to: "/properties", key: "properties", Icon: IconBox },
   { to: "/expenses", key: "expenses", Icon: IconChart },
@@ -63,7 +65,8 @@ export function Layout() {
   const due = getDue(biz);
   const low = getLow(biz);
   const lapsing = getExpiring(biz);
-  const alerts = due.length + low.length + lapsing.length;
+  const lots = getExpBatches(biz);
+  const alerts = due.length + low.length + lapsing.length + lots.length;
 
   // browser notification for due invoices (once per day, while the app is open)
   useEffect(() => {
@@ -141,7 +144,7 @@ export function Layout() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             {alerts > 0 && (
-              <button className="icon-btn" style={{ position: "relative" }} onClick={() => navigate(due.length ? "/invoices" : low.length ? "/inventory" : "/properties")} aria-label={t("inv_dueTitle")} title={t("inv_dueTitle")}>
+              <button className="icon-btn" style={{ position: "relative" }} onClick={() => navigate(due.length ? "/invoices" : low.length ? "/inventory" : lots.length ? "/distribution" : "/properties")} aria-label={t("inv_dueTitle")} title={t("inv_dueTitle")}>
                 <IconBell />
                 <span className="badge badge-red" style={{ position: "absolute", top: -4, insetInlineEnd: -4, padding: "0 5px", fontSize: "0.65rem" }}>{alerts}</span>
               </button>

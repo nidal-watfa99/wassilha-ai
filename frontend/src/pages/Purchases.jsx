@@ -40,6 +40,7 @@ export default function Purchases() {
       return { ...it, qtyIn: (Number(it.qtyIn) || 0) + add, cost: +cost.toFixed(6) };
     }) }));
     upsert("purchases", p);
+    lines.filter((l) => l.lot || l.expiry).forEach((l) => { const item = inv(l.invId), k = l.unit && item.unit && l.unit !== item.unit ? convert(1, l.unit, item.unit) || 1 : 1, q = +((Number(l.qty) || 0) * k).toFixed(6); upsert("batches", { id: uid(), invId: l.invId, lot: l.lot || "", expiry: l.expiry || "", qty: q, remaining: q, purchaseId: p.id, date: p.date }); });
     if (p.paid > 0) addExpense(p, p.paid, p.date);
     setModal(null);
   };
@@ -48,7 +49,7 @@ export default function Purchases() {
     upsert("purchases", { ...payFor, paid: payFor.paid + a }); addExpense(payFor, a, today); setPayFor(null); setAmt("");
   };
   const delPurchase = (p) => {
-    update((s) => ({ ...s, expenses: s.expenses.filter((x) => x.purchaseId !== p.id), inventory: s.inventory.map((it) => {
+    update((s) => ({ ...s, batches: s.batches.filter((x) => x.purchaseId !== p.id), expenses: s.expenses.filter((x) => x.purchaseId !== p.id), inventory: s.inventory.map((it) => {
       const back = p.lines.filter((l) => l.invId === it.id).reduce((a, l) => a + (Number(l.qty) || 0) * (l.unit && it.unit && l.unit !== it.unit ? convert(1, l.unit, it.unit) || 1 : 1), 0);
       return back ? { ...it, qtyIn: (Number(it.qtyIn) || 0) - back } : it; }) }));
     remove("purchases", p.id);
@@ -78,7 +79,7 @@ export default function Purchases() {
       </div>
 
       {tab === "buy" && (<>
-        <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => { setF({ date: today, supplier: "", notes: "", paid: "", currency: cur, rate: "", lines: [{ invId: "", qty: "", unit: "", price: "" }] }); setModal("buy"); }}><IconPlus />{t("pu_new")}</button>
+        <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => { setF({ date: today, supplier: "", notes: "", paid: "", currency: cur, rate: "", lines: [{ invId: "", qty: "", unit: "", price: "", lot: "", expiry: "" }] }); setModal("buy"); }}><IconPlus />{t("pu_new")}</button>
         {biz.purchases.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : biz.purchases.map((p) => (
           <div key={p.id} className="glass card" style={{ display: "grid", gap: "0.4rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><strong><bdi dir="ltr">{p.no}</bdi> · {p.supplier || "—"}</strong><bdi dir="ltr">{p.date}</bdi></div>
@@ -115,8 +116,9 @@ export default function Purchases() {
             <input className="input" type="number" min="0" step="any" dir="ltr" placeholder={t("inv_qty")} value={l.qty} onChange={(e) => setLine(i, { qty: e.target.value })} />
             <select className="select" value={l.unit} onChange={(e) => setLine(i, { unit: e.target.value })}>{(it ? compatible(it.unit) : []).map((c) => <option key={c} value={c}>{unitLabel(c, locale)}</option>)}<option value="">—</option></select>
             <input className="input" type="number" min="0" step="any" dir="ltr" placeholder={t("inv_price")} value={l.price} onChange={(e) => setLine(i, { price: e.target.value })} />
-            <button type="button" className="icon-btn" aria-label={t("delete")} disabled={f.lines.length < 2} onClick={() => setF((s) => ({ ...s, lines: s.lines.filter((_, k) => k !== i) }))}><IconTrash /></button></div>); })}
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setF((s) => ({ ...s, lines: [...s.lines, { invId: "", qty: "", unit: "", price: "" }] }))}><IconPlus />{t("inv_addItem")}</button>
+            <button type="button" className="icon-btn" aria-label={t("delete")} disabled={f.lines.length < 2} onClick={() => setF((s) => ({ ...s, lines: s.lines.filter((_, k) => k !== i) }))}><IconTrash /></button>
+            <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.35rem" }}><input className="input" placeholder={t("ds_lot")} value={l.lot || ""} onChange={(e) => setLine(i, { lot: e.target.value })} /><input className="input" type="date" dir="ltr" title={t("ds_expiryDate")} value={l.expiry || ""} onChange={(e) => setLine(i, { expiry: e.target.value })} /></div></div>); })}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setF((s) => ({ ...s, lines: [...s.lines, { invId: "", qty: "", unit: "", price: "", lot: "", expiry: "" }] }))}><IconPlus />{t("inv_addItem")}</button>
         <Grid><F label={t("pu_paidNow")}><input className="input" type="number" min="0" step="any" value={f.paid} onChange={set("paid")} {...ltr} /></F></Grid>
         <Summary cur={cur} rows={[{ label: t("inv_total"), value: ft }, { label: t("inv_paidAmt"), value: Math.min(Number(f.paid) || 0, ft), tone: "minus" }]} total={{ label: t("inv_left"), value: Math.max(ft - (Number(f.paid) || 0), 0) }} />
         <p style={{ fontSize: "var(--text-xs)", color: "var(--text-3)" }}>{t("pu_note")}</p>

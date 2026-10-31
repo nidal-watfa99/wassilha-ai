@@ -3,11 +3,12 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import { F, Grid, ltr, useForm } from "../components/Form";
+import MoneyInput from "../components/MoneyInput";
 import UnitPicker from "../components/UnitPicker";
 import { unitLabel, compatible, convert } from "../services/units";
 import { useBiz, upsert, remove, uid, fmt, stockLeft, getLow } from "../services/biz";
 
-const BLANK = { name: "", sku: "", unit: "", qtyIn: "", qtyOut: "", minQty: "", cost: "", price: "", supplier: "", location: "", notes: "" };
+const BLANK = { name: "", sku: "", unit: "", qtyIn: "", qtyOut: "", minQty: "", cost: "", price: "", supplier: "", location: "", costCur: "", costFx: "", priceCur: "", priceFx: "", priceW: "", priceWCur: "", priceWFx: "", priceD: "", priceDCur: "", priceDFx: "", notes: "" };
 
 export default function Inventory() {
   const { t, toast, locale } = useApp();
@@ -21,9 +22,12 @@ export default function Inventory() {
   const low = getLow(biz);
 
   const open = (x) => { setF(x === "new" ? BLANK : { ...BLANK, ...x }); setModal(x); };
+  const conv = (amt, c, fx) => { if (!c || c === biz.currency) return amt; const r = Number(fx) || 0; return r ? +((Number(amt) || 0) * r).toFixed(6) : null; };   // stored in the main currency
   const save = (e) => {
     e.preventDefault();
-    upsert("inventory", { ...(modal === "new" ? { id: uid() } : modal), ...f });
+    const cost = conv(f.cost, f.costCur, f.costFx), price = conv(f.price, f.priceCur, f.priceFx), priceW = conv(f.priceW, f.priceWCur, f.priceWFx), priceD = conv(f.priceD, f.priceDCur, f.priceDFx);
+    if ([cost, price, priceW, priceD].includes(null)) return toast(t("fx_missing"), "error");
+    upsert("inventory", { ...(modal === "new" ? { id: uid() } : modal), ...f, cost, price, priceW, priceD, costCur: "", costFx: "", priceCur: "", priceFx: "", priceWCur: "", priceWFx: "", priceDCur: "", priceDFx: "" });
     setModal(null);
   };
   const move = (x, dir) => {
@@ -99,8 +103,10 @@ export default function Inventory() {
               <F label={t("stk_in")}><input className="input" type="number" min="0" step="any" value={f.qtyIn} onChange={set("qtyIn")} {...ltr} /></F>
               <F label={t("stk_out")}><input className="input" type="number" min="0" step="any" value={f.qtyOut} onChange={set("qtyOut")} {...ltr} /></F>
               <F label={t("stk_min")}><input className="input" type="number" min="0" step="any" value={f.minQty} onChange={set("minQty")} {...ltr} /></F>
-              <F label={t("stk_cost")}><input className="input" type="number" min="0" step="any" value={f.cost} onChange={set("cost")} {...ltr} /></F>
-              <F label={t("stk_price")}><input className="input" type="number" min="0" step="any" value={f.price} onChange={set("price")} {...ltr} /></F>
+              <F label={t("stk_cost")}><MoneyInput f={f} setF={setF} amount="cost" currency="costCur" fx="costFx" /></F>
+              <F label={t("stk_price")}><MoneyInput f={f} setF={setF} amount="price" currency="priceCur" fx="priceFx" /></F>
+              <F label={t("ds_priceW")}><MoneyInput f={f} setF={setF} amount="priceW" currency="priceWCur" fx="priceWFx" /></F>
+              <F label={t("ds_priceD")}><MoneyInput f={f} setF={setF} amount="priceD" currency="priceDCur" fx="priceDFx" /></F>
               <F label={t("stk_supplier")}><input className="input" value={f.supplier} onChange={set("supplier")} /></F>
               <F label={t("stk_loc")}><input className="input" value={f.location} onChange={set("location")} /></F>
             </Grid>

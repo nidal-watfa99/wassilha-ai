@@ -29,7 +29,7 @@ export default function Restaurant() {
   const fileRef = useRef(null), trash = useRef([]);
   const today = todayStr(), cur = biz.currency;
   const drivers = biz.employees.filter((e) => e.role === "driver" && e.status !== "ended");
-  const [zn, setZn] = useState(""), [zf, setZf] = useState(""), [quick, setQuick] = useState("");
+  const [zn, setZn] = useState(""), [zf, setZf] = useState(""), [zc, setZc] = useState(""), [quick, setQuick] = useState("");
   const pm = (m) => toMain(biz, m.price, m.currency);          // dish price in the main currency (null = no exchange rate set)
   const close = () => setModal(null);
   const open = (kind, x, init) => { trash.current = []; setF(x ? { ...x, lines: x.lines?.map((l) => ({ ...l })) } : init); setModal({ kind, x }); };
@@ -56,10 +56,13 @@ export default function Restaurant() {
   };
   const empName = (id) => biz.employees.find((e) => e.id === id)?.fullName || "";
   const payNow = () => {
-    if (method === "room" && !payStay) return toast(t("ho_pickStay"), "error");
+    const stay0 = method === "room" ? biz.stays.find((x) => x.id === payStay) : null;
+    if (method === "room" && !stay0) return toast(t("ho_pickStay"), "error");
+    const roomFx = stay0 && stay0.currency && stay0.currency !== cur ? Number(stay0.fx) || biz.rates[stay0.currency] || 0 : 1;
+    if (!roomFx) return toast(t("fx_missing"), "error");
     const o = pay, c = calc(o);
     const inv = { id: uid(), no: method === "room" ? "" : nextNo("invoice"), type: "invoice", customer: o.customer || t("rs_walkin"), issueDate: today, dueDate: "", currency: cur, discount: o.discount || 0, tax: o.tax || 0, notes: `${o.no} · ${t("rs_" + o.type)} · ${method}`, paidAmount: c.total, status: "paid", items: c.items.map((i) => ({ ...i, desc: i.desc === "Service" ? t("rs_service") : i.desc === "Delivery" ? t("rs_delivFee") : i.desc, unit: "" })) };
-    if (method === "room") update((s) => ({ ...s, stays: s.stays.map((x) => (x.id === payStay ? { ...x, charges: [...(x.charges || []), { id: uid(), date: today, desc: `${t("restaurant")} ${o.no}`, qty: 1, amount: +c.total.toFixed(2), taxIncluded: true }] } : x)) }));
+    if (method === "room") update((s) => ({ ...s, stays: s.stays.map((x) => (x.id === payStay ? { ...x, charges: [...(x.charges || []), { id: uid(), date: today, desc: `${t("restaurant")} ${o.no}`, qty: 1, amount: +(c.total / roomFx).toFixed(2), taxIncluded: true }] } : x)) }));
     else upsert("invoices", inv);
     update((s) => {
       const used = {}; o.lines.forEach((l) => { const m = s.menuItems.find((x) => x.id === l.menuId); if (m) Object.entries(usageMap(m, l.qty, s.inventory)).forEach(([k, v]) => { used[k] = (used[k] || 0) + v; }); });
@@ -178,9 +181,10 @@ export default function Restaurant() {
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             <input className="input" style={{ flex: "1 1 140px" }} placeholder={t("rs_zone")} value={zn} onChange={(e) => setZn(e.target.value)} />
             <input className="input" style={{ width: 110 }} type="number" min="0" step="any" dir="ltr" placeholder={t("rs_delivFee")} value={zf} onChange={(e) => setZf(e.target.value)} />
-            <button className="btn btn-ghost btn-sm" onClick={() => { if (zn.trim()) { upsert("zones", { id: uid(), name: zn.trim(), fee: Number(zf) || 0 }); setZn(""); setZf(""); } }}><IconPlus /></button>
+            <div style={{ width: 190 }}><CurrencyPicker value={zc || cur} onChange={setZc} /></div>
+            <button className="btn btn-ghost btn-sm" onClick={() => { if (zn.trim()) { upsert("zones", { id: uid(), name: zn.trim(), fee: Number(zf) || 0, currency: zc || cur }); setZn(""); setZf(""); } }}><IconPlus /></button>
           </div>
-          {biz.zones.map((z) => <div key={z.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: "0.3rem" }}><span>{z.name}</span><span><b dir="ltr">{fmt(z.fee)} {cur}</b><button className="icon-btn" aria-label={t("delete")} onClick={() => remove("zones", z.id)}><IconTrash /></button></span></div>)}
+          {biz.zones.map((z) => <div key={z.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: "0.3rem" }}><span>{z.name}</span><span><b dir="ltr">{fmt(z.fee)} {z.currency || cur}</b><button className="icon-btn" aria-label={t("delete")} onClick={() => remove("zones", z.id)}><IconTrash /></button></span></div>)}
         </div>
         <h3 style={{ margin: "0.3rem 0 0" }}>{t("rs_drivers")}</h3>
         {drivers.length === 0 && <p style={{ color: "var(--text-3)", fontSize: "var(--text-sm)" }}>{t("rs_noDrivers")}</p>}
@@ -202,7 +206,7 @@ export default function Restaurant() {
               <F label={t("rs_cust")}><input className="input" value={f.customer} onChange={set("customer")} /></F>
               {f.type !== "dine" && <F label={t("phone")}><input className="input" type="tel" value={f.phone} onChange={set("phone")} {...ltr} /></F>}
               {f.type === "deliv" && <F label={t("rs_addr")}><input className="input" value={f.address} onChange={set("address")} /></F>}
-              {f.type === "deliv" && <F label={t("rs_zone")}><select className="select" value={f.zone} onChange={(e) => { const z = biz.zones.find((x) => x.id === e.target.value); setF((p) => ({ ...p, zone: e.target.value, deliveryFee: z ? z.fee : p.deliveryFee })); }}><option value="">—</option>{biz.zones.map((z) => <option key={z.id} value={z.id}>{z.name} · {fmt(z.fee)}</option>)}</select></F>}
+              {f.type === "deliv" && <F label={t("rs_zone")}><select className="select" value={f.zone} onChange={(e) => { const z = biz.zones.find((x) => x.id === e.target.value); setF((p) => ({ ...p, zone: e.target.value, deliveryFee: z ? (toMain(biz, z.fee, z.currency) ?? z.fee) : p.deliveryFee })); }}><option value="">—</option>{biz.zones.map((z) => <option key={z.id} value={z.id}>{z.name} · {fmt(z.fee)}</option>)}</select></F>}
               {f.type === "deliv" && <F label={t("rs_driver")}><select className="select" value={f.driver} onChange={set("driver")}><option value="">—</option>{drivers.map((d) => <option key={d.id} value={d.id}>{d.fullName}</option>)}</select></F>}
               {f.type === "deliv" && <F label={t("rs_delivFee")}><input className="input" type="number" min="0" step="any" value={f.deliveryFee} onChange={set("deliveryFee")} {...ltr} /></F>}
               {f.type === "deliv" && <F label={t("rs_driverCost")}><input className="input" type="number" min="0" step="any" value={f.driverCost} onChange={set("driverCost")} {...ltr} /></F>}

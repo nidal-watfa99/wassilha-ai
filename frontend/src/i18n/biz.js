@@ -1,5 +1,16 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+distribution: "Distribution", type_distributor: "Wholesale / distributor", ds_orders: "Orders", ds_deliver: "Delivery routes", ds_accounts: "Customer accounts", ds_expiry: "Batches & expiry", ds_areas: "Areas",
+  ds_newOrder: "New distribution order", ds_customer: "Customer (outlet)", ds_area: "Area / route", ds_tier: "Price level", ds_t_retail: "Retail", ds_t_wholesale: "Wholesale", ds_t_distributor: "Distributor",
+  ds_priceW: "Wholesale price", ds_priceD: "Distributor price", ds_bonus: "Bonus (free)", ds_paidNow: "Paid now", ds_saveDraft: "Save draft", ds_confirm: "Confirm & issue invoice", ds_override: "Approve anyway",
+  ds_st_draft: "Draft", ds_st_confirmed: "Confirmed", ds_st_loaded: "Loaded", ds_st_delivered: "Delivered", ds_load: "Mark loaded", ds_deliveredBtn: "Mark delivered", ds_noArea: "No area",
+  ds_needItems: "Add inventory items first, then a customer and at least one line.", ds_missingItem: "An item in this order no longer exists.", ds_noStock: "Not enough stock", ds_overCredit: "This order would exceed the customer's credit limit.",
+  ds_collect: "Collect payment", ds_collected: "Payment recorded.", ds_extra: "Paid more than owed; extra not allocated", ds_collectNote: "The payment settles the oldest unpaid invoices first. Only invoices in the main currency are included.",
+  ds_needContacts: "No contacts yet. Add your outlets in Contacts.", ds_noBatches: "No batches yet. Enter a lot number or expiry date on a purchase line.", ds_lot: "Lot no.", ds_expiryDate: "Expiry date",
+  ds_e_ok: "Valid", ds_e_soon: "Expiring soon", ds_e_expired: "Expired", ds_writeOff: "Write off", ds_expDays: "Warn before expiry (days)",
+  ds_expNote: "Sales take the batch that expires first and never an expired one. Writing off moves the remaining quantity to waste at its cost. Stock bought without lot or expiry is not tracked by batch.",
+  ds_newArea: "New area / route", ds_day: "Delivery day",
+  ho_noRate: "reservations left out: no exchange rate for their currency",
 hotel: "Hotel", type_hotel: "Hotel / guest house", ho_board: "Today", ho_res: "Reservations", ho_grid: "Availability", ho_rooms: "Rooms", ho_newStay: "New reservation", ho_newRoom: "New room",
   ho_inHouse: "In-house guests", ho_occNow: "Occupancy now", ho_arrivals: "Arrivals today", ho_departures: "Departures due", ho_dirty: "Rooms to clean", ho_checkIn: "Check in", ho_checkOut: "Check-out date", ho_folio: "Guest account",
   ho_monthKpi: "Month performance", ho_roomNights: "Room nights sold", ho_roomRevenue: "Room revenue", ho_adr: "Average daily rate (ADR)", ho_revpar: "Revenue per available room", ho_occMonth: "Occupancy of the month %",
@@ -148,6 +159,17 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+distribution: "التوزيع بالجملة", type_distributor: "جملة / موزّع", ds_orders: "الطلبات", ds_deliver: "خطوط التوزيع", ds_accounts: "حسابات الزبائن", ds_expiry: "الدفعات والصلاحية", ds_areas: "المناطق",
+  ds_newOrder: "طلب توزيع جديد", ds_customer: "الزبون (المحل)", ds_area: "المنطقة / الخط", ds_tier: "مستوى السعر", ds_t_retail: "مفرق", ds_t_wholesale: "جملة", ds_t_distributor: "موزّع",
+  ds_priceW: "سعر الجملة", ds_priceD: "سعر الموزّع", ds_bonus: "بونص (مجاني)", ds_paidNow: "المدفوع الآن", ds_saveDraft: "حفظ مسودة", ds_confirm: "اعتماد وإصدار الفاتورة", ds_override: "اعتماد رغم ذلك",
+  ds_st_draft: "مسودة", ds_st_confirmed: "معتمد", ds_st_loaded: "تم التحميل", ds_st_delivered: "تم التسليم", ds_load: "تم التحميل", ds_deliveredBtn: "تم التسليم", ds_noArea: "بلا منطقة",
+  ds_needItems: "أضف أصنافاً للمخزون أولاً، ثم زبوناً وسطراً واحداً على الأقل.", ds_missingItem: "صنف في هذا الطلب لم يعد موجوداً.", ds_noStock: "المخزون غير كافٍ", ds_overCredit: "هذا الطلب يتجاوز سقف ائتمان الزبون.",
+  ds_collect: "تحصيل دفعة", ds_collected: "سُجّلت الدفعة.", ds_extra: "المدفوع أكثر من المستحق؛ الزيادة لم تُوزَّع", ds_collectNote: "الدفعة تسدّد أقدم الفواتير غير المدفوعة أولاً. وتدخل فواتير العملة الأساسية فقط.",
+  ds_needContacts: "لا جهات اتصال بعد. أضف محلاتك في جهات الاتصال.", ds_noBatches: "لا دفعات بعد. اكتب رقم الدفعة أو تاريخ الصلاحية في سطر شراء.", ds_lot: "رقم الدفعة", ds_expiryDate: "تاريخ الصلاحية",
+  ds_e_ok: "صالح", ds_e_soon: "ينتهي قريباً", ds_e_expired: "منتهي", ds_writeOff: "شطب", ds_expDays: "نبّه قبل انتهاء الصلاحية (بالأيام)",
+  ds_expNote: "البيع يأخذ الدفعة الأقرب انتهاءً ولا يأخذ منتهية الصلاحية أبداً. والشطب ينقل الكمية المتبقية إلى الهدر بتكلفتها. والبضاعة المشتراة بلا رقم دفعة أو صلاحية لا تُتتبَّع بالدفعات.",
+  ds_newArea: "منطقة / خط جديد", ds_day: "يوم التوصيل",
+  ho_noRate: "حجوزات مستثناة: لا سعر صرف لعملتها",
 hotel: "الفندق", type_hotel: "فندق / نُزل", ho_board: "اليوم", ho_res: "الحجوزات", ho_grid: "التوفر", ho_rooms: "الغرف", ho_newStay: "حجز جديد", ho_newRoom: "غرفة جديدة",
   ho_inHouse: "نزلاء داخل الفندق", ho_occNow: "الإشغال الآن", ho_arrivals: "وصول اليوم", ho_departures: "مغادرات مستحقة", ho_dirty: "غرف تحتاج تنظيفاً", ho_checkIn: "تسجيل الوصول", ho_checkOut: "تاريخ المغادرة", ho_folio: "حساب النزيل",
   ho_monthKpi: "أداء الشهر", ho_roomNights: "ليالي الغرف المباعة", ho_roomRevenue: "إيراد الغرف", ho_adr: "متوسط سعر الليلة", ho_revpar: "الإيراد لكل غرفة متاحة", ho_occMonth: "إشغال الشهر %",

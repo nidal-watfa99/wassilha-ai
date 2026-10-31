@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 export const KEY = "wassilha_biz_v1";
-export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory", "catalog", "expenses", "reports", "aimodels", "restaurant", "purchases", "properties", "hotel"];
+export const MODULES = ["contacts", "messages", "ai", "tasks", "calendar", "documents", "insights", "products", "calculator", "employees", "invoices", "map", "inventory", "catalog", "expenses", "reports", "aimodels", "restaurant", "purchases", "properties", "hotel", "distribution"];
 
 const PRESETS = {
   shop: ["contacts", "products", "catalog", "inventory", "expenses", "reports", "invoices", "employees", "map", "tasks", "documents", "insights", "calculator", "ai"],
@@ -16,6 +16,7 @@ const PRESETS = {
   restaurant: ["contacts", "restaurant", "inventory", "invoices", "employees", "expenses", "reports", "map", "tasks", "calendar", "documents", "insights", "calculator", "ai"],
   realestate: ["contacts", "properties", "invoices", "employees", "expenses", "reports", "map", "tasks", "calendar", "documents", "insights", "calculator", "ai"],
   hotel: ["contacts", "hotel", "restaurant", "inventory", "purchases", "invoices", "employees", "expenses", "reports", "map", "tasks", "calendar", "documents", "insights", "calculator", "ai"],
+  distributor: ["contacts", "distribution", "inventory", "purchases", "invoices", "employees", "expenses", "reports", "map", "tasks", "calendar", "documents", "insights", "calculator", "ai"],
   custom: MODULES,
 };
 export const TYPE_KEYS = Object.keys(PRESETS);
@@ -31,12 +32,13 @@ const TERMS = {
   restaurant: { ar: ["الزبائن", "قائمة الطعام"], en: ["Customers", "Menu"] },
   realestate: { ar: ["المستأجرون", "الخدمات"], en: ["Tenants", "Services"] },
   hotel: { ar: ["النزلاء والعملاء", "الخدمات"], en: ["Guests & clients", "Services"] },
+  distributor: { ar: ["الموزَّع إليهم", "الأصناف"], en: ["Outlets", "Items"] },
   custom: { ar: ["جهات الاتصال", "المنتجات"], en: ["Contacts", "Products"] },
 };
 
 const DEFAULT = {
   configured: false, type: "custom", name: "", currency: "USD", taxRate: 0, reminderDays: 3,
-  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, menuItems: [], tables: [], reservations: [], orders: [], purchases: [], waste: [], zones: [], rates: {}, props: [], units: [], leases: [], utils: [], shared: [], rooms: [], stays: [], leaseDays: 60, seq: { invoice: 0, employee: 0, quote: 0, order: 0, purchase: 0, lease: 0, booking: 0 },
+  modules: {}, terms: {}, employees: [], invoices: [], places: [], inventory: [], catalog: [], expenses: [], profiles: {}, menuItems: [], tables: [], reservations: [], orders: [], purchases: [], waste: [], zones: [], rates: {}, props: [], units: [], leases: [], utils: [], shared: [], rooms: [], stays: [], batches: [], areas: [], dorders: [], receipts: [], expiryDays: 90, leaseDays: 60, seq: { invoice: 0, employee: 0, quote: 0, order: 0, purchase: 0, lease: 0, booking: 0, dorder: 0 },
 };
 
 const mem = {};
@@ -70,7 +72,7 @@ export function remove(coll, id) { update((s) => ({ ...s, [coll]: s[coll].filter
 export function nextNo(kind) {
   let n = 0;
   update((s) => { n = (s.seq[kind] || 0) + 1; return { ...s, seq: { ...s.seq, [kind]: n } }; });
-  const pre = { invoice: "INV", quote: "QUO", employee: "EMP", order: "ORD", purchase: "PUR", lease: "LEA", booking: "BKG" }[kind];
+  const pre = { invoice: "INV", quote: "QUO", employee: "EMP", order: "ORD", purchase: "PUR", lease: "LEA", booking: "BKG", dorder: "DST" }[kind];
   return `${pre}-${String(n).padStart(4, "0")}`;
 }
 

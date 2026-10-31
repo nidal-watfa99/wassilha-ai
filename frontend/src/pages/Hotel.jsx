@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
 import { F, Grid, Sec, ltr, useForm } from "../components/Form";
+import MoneyInput from "../components/MoneyInput";
 import Summary from "../components/Summary";
 import { useBiz, upsert, remove, update, uid, fmt, nextNo, todayStr } from "../services/biz";
 import { folio, clashes, stayOn, kpis, addDays, ACTIVE } from "../services/hotel";
@@ -28,11 +29,11 @@ export default function Hotel() {
   const saveRoom = (e) => {
     e.preventDefault();
     if (biz.rooms.some((r) => r.id !== modal.x?.id && r.name.trim() === f.name.trim())) return toast(t("ho_dupRoom"), "error");
-    upsert("rooms", { id: modal.x?.id || uid(), ...(modal.x || {}), ...f, rate: Number(f.rate) || 0 }); close();
+    upsert("rooms", { id: modal.x?.id || uid(), ...(modal.x || {}), ...f, rate: Number(f.rate) || 0, currency: f.currency || cur }); close();
   };
   const gen = (e) => {
     e.preventDefault(); const have = new Set(biz.rooms.map((r) => r.name)); let n = 0;
-    for (let fl = +f.from; fl <= +f.to; fl++) for (let k = 1; k <= +f.per; k++) { const name = `${f.prefix}${fl}${pad2(k)}`; if (!have.has(name)) { upsert("rooms", { id: uid(), name, floor: String(fl), type: f.type, beds: f.beds, capacity: f.capacity, rate: Number(f.rate) || 0, hk: "clean", notes: "" }); n++; } }
+    for (let fl = +f.from; fl <= +f.to; fl++) for (let k = 1; k <= +f.per; k++) { const name = `${f.prefix}${fl}${pad2(k)}`; if (!have.has(name)) { upsert("rooms", { id: uid(), name, floor: String(fl), type: f.type, beds: f.beds, capacity: f.capacity, rate: Number(f.rate) || 0, currency: f.currency || cur, fx: f.fx || "", hk: "clean", notes: "" }); n++; } }
     toast(`${n} ${t("pr_created")}`, "success"); close();
   };
   const cycleHk = (r) => upsert("rooms", { ...r, hk: HK[(HK.indexOf(r.hk) + 1) % HK.length] });
@@ -54,7 +55,7 @@ export default function Hotel() {
     if (x.disc) items.push({ desc: t("inv_discAmt"), qty: 1, price: -x.disc, unit: "" });
     if (x.tax) items.push({ desc: t("inv_taxAmt"), qty: 1, price: x.tax, unit: "" });
     const paid = Math.min(Math.max(x.paid, 0), x.total), no = nextNo("invoice");
-    upsert("invoices", { id: uid(), no, type: "invoice", customer: s.guest, issueDate: today, dueDate: today, currency: cur, discount: 0, tax: 0, notes: s.no || "", paidAmount: paid, status: x.balance <= 0.005 ? "paid" : paid > 0 ? "partial" : "unpaid", items });
+    upsert("invoices", { id: uid(), no, type: "invoice", customer: s.guest, issueDate: today, dueDate: today, currency: s.currency || cur, discount: 0, tax: 0, notes: s.no || "", paidAmount: paid, status: x.balance <= 0.005 ? "paid" : paid > 0 ? "partial" : "unpaid", items });
     persist({ ...s, status: "checkedout", invoiceNo: no, checkedOutAt: today });
     if (rm) upsert("rooms", { ...rm, hk: "dirty" });
     close(); toast(`${t("ho_invoiced")} ${no}`, "success");
@@ -63,12 +64,13 @@ export default function Hotel() {
 
   /* ---------- numbers ---------- */
   const inHouse = biz.stays.filter((s) => s.status === "checkedin"), arrivals = biz.stays.filter((s) => s.status === "booked" && s.checkIn === today), departures = inHouse.filter((s) => s.checkOut <= today);
-  const month = kpis(biz.rooms, biz.stays, today.slice(0, 7)), occNow = biz.rooms.length ? (biz.rooms.filter((r) => stayOn(biz.stays, r.id, today)?.status === "checkedin").length / biz.rooms.length) * 100 : 0;
+  const mult = (s) => (!s.currency || s.currency === cur ? 1 : Number(s.fx) || biz.rates[s.currency] || null);
+  const month = kpis(biz.rooms, biz.stays, today.slice(0, 7), mult), occNow = biz.rooms.length ? (biz.rooms.filter((r) => stayOn(biz.stays, r.id, today)?.status === "checkedin").length / biz.rooms.length) * 100 : 0;
   const days = [...Array(14)].map((_, i) => addDays(today, i));
   const list = biz.stays.filter((s) => !st || s.status === st).sort((a, b) => b.checkIn.localeCompare(a.checkIn));
   const stBadge = { booked: "badge-blue", checkedin: "badge-green", checkedout: "", cancelled: "badge-red", noshow: "badge-red" };
   const hkBadge = { clean: "badge-green", dirty: "badge-violet", maintenance: "badge-red" };
-  const newStay = (roomId = "", checkIn = today) => biz.rooms.length ? open("stay", null, { guest: "", phone: "", idNo: "", nationality: "", roomId, checkIn, checkOut: addDays(checkIn, 1), adults: 1, children: 0, rate: room(roomId)?.rate || "", discount: 0, tax: biz.taxRate, source: "walkin", status: "booked", notes: "", charges: [], payments: [] }) : toast(t("ho_needRooms"), "error");
+  const newStay = (roomId = "", checkIn = today) => biz.rooms.length ? open("stay", null, { guest: "", phone: "", idNo: "", nationality: "", roomId, checkIn, checkOut: addDays(checkIn, 1), adults: 1, children: 0, rate: room(roomId)?.rate || "", currency: room(roomId)?.currency || cur, fx: room(roomId)?.fx || "", discount: 0, tax: biz.taxRate, source: "walkin", status: "booked", notes: "", charges: [], payments: [] }) : toast(t("ho_needRooms"), "error");
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -87,6 +89,7 @@ export default function Hotel() {
             {arr.map((s) => <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}><span>{s.guest} · {room(s.roomId)?.name}</span>
               <button className="btn btn-ghost btn-sm" onClick={() => (to ? quick(s, to) : open("stay", s))}>{label}</button></div>)}</div>))}
         <Summary cur={cur} title={`${t("ho_monthKpi")} ${today.slice(0, 7)}`} rows={[{ label: t("ho_roomNights"), text: String(month.nights), tone: "muted" }, { label: t("ho_roomRevenue"), value: month.revenue, sub: true }, { label: t("ho_adr"), value: month.adr }, { label: t("ho_revpar"), value: month.revpar }]} total={{ label: t("ho_occMonth"), value: month.occ }} />
+        {month.skipped > 0 && <div style={{ color: "#ff8a9b", fontSize: "var(--text-sm)" }}>⚠ {month.skipped} {t("ho_noRate")}</div>}
         <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-3)" }}>{t("ho_kpiNote")}</p>
       </>)}
 
@@ -113,12 +116,12 @@ export default function Hotel() {
 
       {tab === "rooms" && (<>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button className="btn btn-primary btn-sm" onClick={() => open("room", null, { name: "", floor: "", type: "double", beds: "", capacity: 2, rate: "", hk: "clean", notes: "" })}><IconPlus />{t("ho_newRoom")}</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => open("gen", null, { from: 1, to: 5, per: 10, prefix: "", type: "double", beds: "", capacity: 2, rate: "" })}>⚡ {t("pr_gen")}</button></div>
+          <button className="btn btn-primary btn-sm" onClick={() => open("room", null, { name: "", floor: "", type: "double", beds: "", capacity: 2, rate: "", currency: cur, fx: "", hk: "clean", notes: "" })}><IconPlus />{t("ho_newRoom")}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => open("gen", null, { from: 1, to: 5, per: 10, prefix: "", type: "double", beds: "", capacity: 2, rate: "", currency: cur, fx: "" })}>⚡ {t("pr_gen")}</button></div>
         {biz.rooms.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : biz.rooms.map((r) => { const s = stayOn(biz.stays, r.id, today); return (
           <div key={r.id} className="glass card" style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
             <div><strong>{r.name}</strong> <span className="badge badge-blue">{t("ho_t_" + r.type)}</span> <span className={`badge ${s?.status === "checkedin" ? "badge-green" : ""}`}>{s?.status === "checkedin" ? t("pr_s_occupied") : s ? t("pr_s_reserved") : t("pr_s_vacant")}</span>
-              <div style={{ fontSize: "var(--text-sm)", color: "var(--text-3)" }}>{r.floor && `${t("pr_floor")} ${r.floor} · `}{r.capacity} {t("rs_guests")} · <bdi dir="ltr">{fmt(r.rate)} {cur}</bdi>{s && ` · ${s.guest}`}</div></div>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--text-3)" }}>{r.floor && `${t("pr_floor")} ${r.floor} · `}{r.capacity} {t("rs_guests")} · <bdi dir="ltr">{fmt(r.rate)} {r.currency || cur}</bdi>{s && ` · ${s.guest}`}</div></div>
             <span style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}><button className={`btn btn-sm btn-ghost`} onClick={() => cycleHk(r)}><span className={`badge ${hkBadge[r.hk]}`}>{t("ho_hk_" + r.hk)}</span></button>
               <button className="icon-btn" aria-label={t("b_edit")} onClick={() => open("room", r)}><IconEdit /></button>
               <button className="icon-btn" aria-label={t("delete")} onClick={() => biz.stays.some((x) => x.roomId === r.id) ? toast(t("ho_roomHasStays"), "error") : setDel({ coll: "rooms", x: r })}><IconTrash /></button></span>
@@ -131,7 +134,7 @@ export default function Hotel() {
         <F label={t("map_kind")}><select className="select" value={f.type} onChange={set("type")}>{R_TYPES.map((k) => <option key={k} value={k}>{t("ho_t_" + k)}</option>)}</select></F>
         <F label={t("ho_beds")}><input className="input" value={f.beds} onChange={set("beds")} /></F>
         <F label={t("rs_guests")}><input className="input" type="number" min="1" value={f.capacity} onChange={set("capacity")} {...ltr} /></F>
-        <F label={`${t("ho_rate")} (${cur})`}><input className="input" type="number" min="0" step="any" value={f.rate} onChange={set("rate")} {...ltr} /></F>
+        <F label={t("ho_rate")}><MoneyInput f={f} setF={setF} amount="rate" currency="currency" fx="fx" /></F>
         <F label={t("emp_notes")} wide><input className="input" value={f.notes} onChange={set("notes")} /></F></Grid><Foot t={t} onCancel={close} /></form></Modal>}
       {modal?.kind === "gen" && <Modal title={t("pr_gen")} onClose={close}><form onSubmit={gen}><Grid>
         <F label={t("pr_fromFloor")}><input className="input" type="number" min="0" required value={f.from} onChange={set("from")} {...ltr} /></F>
@@ -139,7 +142,7 @@ export default function Hotel() {
         <F label={t("pr_perFloor")}><input className="input" type="number" min="1" max="99" required value={f.per} onChange={set("per")} {...ltr} /></F>
         <F label={t("pr_prefix")}><input className="input" value={f.prefix} onChange={set("prefix")} {...ltr} /></F>
         <F label={t("map_kind")}><select className="select" value={f.type} onChange={set("type")}>{R_TYPES.map((k) => <option key={k} value={k}>{t("ho_t_" + k)}</option>)}</select></F>
-        <F label={`${t("ho_rate")} (${cur})`}><input className="input" type="number" min="0" step="any" value={f.rate} onChange={set("rate")} {...ltr} /></F></Grid>
+        <F label={t("ho_rate")}><MoneyInput f={f} setF={setF} amount="rate" currency="currency" fx="fx" /></F></Grid>
         <p style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{t("pr_genHelp")} <bdi dir="ltr">{f.prefix}{f.from}01 … {f.prefix}{f.to}{pad2(f.per)}</bdi></p><Foot t={t} onCancel={close} /></form></Modal>}
 
       {modal?.kind === "stay" && <Modal wide title={modal.x ? `${f.guest} · ${f.no || ""}` : t("ho_newStay")} onClose={close}><form onSubmit={saveStay}>
@@ -148,12 +151,12 @@ export default function Hotel() {
           <F label={t("phone")}><input className="input" type="tel" value={f.phone} onChange={set("phone")} {...ltr} /></F>
           <F label={t("ho_idNo")}><input className="input" value={f.idNo} onChange={set("idNo")} {...ltr} /></F>
           <F label={t("emp_nation")}><input className="input" value={f.nationality} onChange={set("nationality")} /></F>
-          <F label={t("ho_room") + " *"}><select className="select" required value={f.roomId} onChange={(e) => setF((p) => ({ ...p, roomId: e.target.value, rate: p.rate || room(e.target.value)?.rate || "" }))}><option value="">—</option>{biz.rooms.map((r) => <option key={r.id} value={r.id}>{r.name} · {t("ho_t_" + r.type)} · {fmt(r.rate)}</option>)}</select></F>
+          <F label={t("ho_room") + " *"}><select className="select" required value={f.roomId} onChange={(e) => setF((p) => ({ ...p, roomId: e.target.value, rate: p.rate || room(e.target.value)?.rate || "", currency: p.rate ? p.currency : room(e.target.value)?.currency || cur, fx: p.rate ? p.fx : room(e.target.value)?.fx || "" }))}><option value="">—</option>{biz.rooms.map((r) => <option key={r.id} value={r.id}>{r.name} · {t("ho_t_" + r.type)} · {fmt(r.rate)}</option>)}</select></F>
           <F label={t("ho_checkIn")}><input className="input" type="date" required value={f.checkIn} onChange={set("checkIn")} {...ltr} /></F>
           <F label={t("ho_checkOut")}><input className="input" type="date" required value={f.checkOut} onChange={set("checkOut")} {...ltr} /></F>
           <F label={t("ho_adults")}><input className="input" type="number" min="1" value={f.adults} onChange={set("adults")} {...ltr} /></F>
           <F label={t("ho_children")}><input className="input" type="number" min="0" value={f.children} onChange={set("children")} {...ltr} /></F>
-          <F label={`${t("ho_rate")} (${cur})`}><input className="input" type="number" min="0" step="any" value={f.rate} onChange={set("rate")} {...ltr} /></F>
+          <F label={t("ho_rate")}><MoneyInput f={f} setF={setF} amount="rate" currency="currency" fx="fx" /></F>
           <F label={t("inv_discount")}><input className="input" type="number" min="0" max="100" step="any" value={f.discount} onChange={set("discount")} {...ltr} /></F>
           <F label={t("inv_tax")}><input className="input" type="number" min="0" max="100" step="any" value={f.tax ?? biz.taxRate} onChange={set("tax")} {...ltr} /></F>
           <F label={t("ho_source")}><select className="select" value={f.source} onChange={set("source")}>{SOURCES.map((k) => <option key={k} value={k}>{t("ho_src_" + k)}</option>)}</select></F>
@@ -171,7 +174,7 @@ export default function Hotel() {
           <input className="input" type="number" step="any" dir="ltr" placeholder={t("amount")} value={pay.amount} onChange={(e) => setPay({ ...pay, amount: e.target.value })} />
           <select className="select" value={pay.method} onChange={(e) => setPay({ ...pay, method: e.target.value })}>{["cash", "card", "transfer", "wallet"].map((k) => <option key={k} value={k}>{t("exp_m_" + k)}</option>)}</select>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => { if (Number(pay.amount) > 0) { setF((p) => ({ ...p, payments: [...p.payments, { id: uid(), date: today, amount: Number(pay.amount), method: pay.method }] })); setPay({ ...pay, amount: "" }); } }}><IconPlus /></button></div>
-        {fl && <Summary cur={cur} rows={[{ label: `${t("ho_room")} (${fl.n} ${t("ho_nights")})`, value: fl.room }, { label: t("ho_charges"), value: fl.extras + fl.inclTax, tone: "plus" }, { label: t("inv_discAmt"), value: fl.disc, tone: "minus" }, { label: t("inv_taxAmt"), value: fl.tax, tone: "plus" }, { label: t("inv_total"), value: fl.total, sub: true }, { label: t("inv_paidAmt"), value: fl.paid, tone: "minus" }]} total={{ label: t("inv_left"), value: fl.balance }} />}
+        {fl && <Summary cur={f.currency || cur} rows={[{ label: `${t("ho_room")} (${fl.n} ${t("ho_nights")})`, value: fl.room }, { label: t("ho_charges"), value: fl.extras + fl.inclTax, tone: "plus" }, { label: t("inv_discAmt"), value: fl.disc, tone: "minus" }, { label: t("inv_taxAmt"), value: fl.tax, tone: "plus" }, { label: t("inv_total"), value: fl.total, sub: true }, { label: t("inv_paidAmt"), value: fl.paid, tone: "minus" }]} total={{ label: t("inv_left"), value: fl.balance }} />}
         <F label={t("emp_notes")}><input className="input" value={f.notes} onChange={set("notes")} /></F>
         <Foot t={t} onCancel={close} extra={<>
           {f.status === "booked" && modal.x && <button type="button" className="btn btn-ghost btn-sm" onClick={(e) => saveStay(e, { status: "cancelled" })}>{t("ho_st_cancelled")}</button>}

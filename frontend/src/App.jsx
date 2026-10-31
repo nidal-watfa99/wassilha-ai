@@ -30,6 +30,7 @@ import Restaurant from "./pages/Restaurant";
 import Purchases from "./pages/Purchases";
 import Properties from "./pages/Properties";
 import Hotel from "./pages/Hotel";
+import Distribution from "./pages/Distribution";
 
 function PrivateRoute({ children }) {
   const { user, authChecked } = useApp();
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="purchases" element={<Purchases />} />
           <Route path="properties" element={<Properties />} />
           <Route path="hotel" element={<Hotel />} />
+          <Route path="distribution" element={<Distribution />} />
           <Route path="reports" element={<Reports />} />
           <Route path="catalog" element={<Catalog />} />
           <Route path="inventory" element={<Inventory />} />

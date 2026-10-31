@@ -4,13 +4,14 @@ import { useApp } from "../context/AppContext";
 import { Modal } from "../components/UI";
 import { IconPlus, IconTrash } from "../components/Icons";
 import { F, Grid, Sec, useForm } from "../components/Form";
+import MoneyInput from "../components/MoneyInput";
 import Summary from "../components/Summary";
 import MediaView from "../components/MediaView";
 import { useBiz, setProfile, upsert, uid, nextNo, todayStr, finOf, CONTACT_TYPES, fmt } from "../services/biz";
 import { putMedia, getMedia, delMedia, compressImage } from "../services/media";
 import { waPhone } from "../services/phone";
 
-const BLANK = { type: "customer", profession: "", nationality: "", address: "", city: "", bizNature: "", taxNo: "", creditLimit: "", notes2: "", media: [] };
+const BLANK = { type: "customer", tier: "", areaId: "", creditCur: "", creditFx: "", profession: "", nationality: "", address: "", city: "", bizNature: "", taxNo: "", creditLimit: "", notes2: "", media: [] };
 
 export default function ContactProfile({ contact, onClose }) {
   const { t, toast } = useApp();
@@ -19,6 +20,7 @@ export default function ContactProfile({ contact, onClose }) {
   const [recording, setRecording] = useState(false);
   const rec = useRef(null), trash = useRef([]), fileRef = useRef(null);
   const fin = finOf(biz, contact.name);
+  const limitMain = (Number(f.creditLimit) || 0) * (f.creditCur && f.creditCur !== biz.currency ? Number(f.creditFx) || biz.rates[f.creditCur] || 0 : 1);
 
   const add = (m) => setF((p) => ({ ...p, media: [...p.media, { ...m, at: new Date().toISOString() }] }));
   const addFiles = async (e) => {
@@ -78,15 +80,17 @@ export default function ContactProfile({ contact, onClose }) {
         <Sec>{t("ct_sec_info")}</Sec>
         <Grid>
           <F label={t("ct_type")}><select className="select" value={f.type} onChange={set("type")}>{CONTACT_TYPES.map((k) => <option key={k} value={k}>{t("ct_t_" + k)}</option>)}</select></F>
+          <F label={t("ds_tier")}><select className="select" value={f.tier || ""} onChange={set("tier")}><option value="">{t("ds_t_retail")}</option><option value="wholesale">{t("ds_t_wholesale")}</option><option value="distributor">{t("ds_t_distributor")}</option></select></F>
+          {biz.areas.length > 0 && <F label={t("ds_area")}><select className="select" value={f.areaId || ""} onChange={set("areaId")}><option value="">—</option>{biz.areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></F>}
           <F label={t("ct_profession")}><input className="input" value={f.profession} onChange={set("profession")} /></F>
           <F label={t("emp_nation")}><input className="input" value={f.nationality} onChange={set("nationality")} /></F>
           <F label={t("ct_bizNature")}><input className="input" value={f.bizNature} onChange={set("bizNature")} /></F>
           <F label={t("ct_city")}><input className="input" value={f.city} onChange={set("city")} /></F>
           <F label={t("ct_taxNo")}><input className="input" value={f.taxNo} onChange={set("taxNo")} dir="ltr" /></F>
           <F label={t("b_address")} wide><input className="input" value={f.address} onChange={set("address")} /></F>
-          <F label={t("ct_credit") + ` (${biz.currency})`}><input className="input" type="number" min="0" step="any" value={f.creditLimit} onChange={set("creditLimit")} dir="ltr" /></F>
+          <F label={t("ct_credit")}><MoneyInput f={f} setF={setF} amount="creditLimit" currency="creditCur" fx="creditFx" /></F>
         </Grid>
-        {Number(f.creditLimit) > 0 && fin.left > Number(f.creditLimit) && <div style={{ color: "#ff8a9b", fontSize: "var(--text-sm)" }}>⚠ {t("ct_overCredit")}</div>}
+        {limitMain > 0 && fin.left > limitMain && <div style={{ color: "#ff8a9b", fontSize: "var(--text-sm)" }}>⚠ {t("ct_overCredit")}</div>}
         <F label={t("emp_notes")}><textarea className="textarea" rows={2} value={f.notes2} onChange={set("notes2")} /></F>
         <Sec>{t("ct_sec_media")}</Sec>
         <div style={{ display: "grid", gap: "0.6rem" }}>

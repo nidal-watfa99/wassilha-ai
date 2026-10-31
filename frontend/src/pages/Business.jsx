@@ -42,7 +42,7 @@ export function SetupWizard({ onClose }) {
   );
 }
 
-const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory", catalog: "catalog", expenses: "expenses", reports: "reports", aimodels: "aimodels", restaurant: "restaurant", purchases: "purchases", properties: "properties", hotel: "hotel" };
+const LABEL = { contacts: "contacts", messages: "messages", ai: "ai", tasks: "tasks", calendar: "calendar", documents: "documents", insights: "insights", products: "products", calculator: "calculator", employees: "employees", invoices: "invoices", map: "map", inventory: "inventory", catalog: "catalog", expenses: "expenses", reports: "reports", aimodels: "aimodels", restaurant: "restaurant", purchases: "purchases", properties: "properties", hotel: "hotel", distribution: "distribution" };
 
 export default function Business() {
   const { t, locale, toast } = useApp();
@@ -81,6 +81,7 @@ export default function Business() {
           <F label={t("wzTax")}><input className="input" type="number" min="0" max="100" step="any" value={biz.taxRate} onChange={(e) => set("taxRate", e.target.value)} {...ltr} /></F>
           <F label={t("bzRemind")}><input className="input" type="number" min="0" max="60" value={biz.reminderDays} onChange={(e) => set("reminderDays", e.target.value)} {...ltr} /></F>
           <F label={t("pr_leaseDays")}><input className="input" type="number" min="0" max="365" value={biz.leaseDays} onChange={(e) => set("leaseDays", e.target.value)} {...ltr} /></F>
+          <F label={t("ds_expDays")}><input className="input" type="number" min="0" max="730" value={biz.expiryDays} onChange={(e) => set("expiryDays", e.target.value)} {...ltr} /></F>
           <F label={t("bzType")}>
             <select className="select" value={biz.type} onChange={(e) => applyPreset(e.target.value, locale, biz)}>
               {TYPE_KEYS.map((k) => <option key={k} value={k}>{t("type_" + k)}</option>)}

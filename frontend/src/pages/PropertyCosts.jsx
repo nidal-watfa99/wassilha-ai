@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconTrash } from "../components/Icons";
 import { F, Grid, ltr, useForm } from "../components/Form";
+import MoneyInput from "../components/MoneyInput";
 import Summary from "../components/Summary";
 import { useBiz, upsert, remove, uid, fmt, nextNo, todayStr, payroll } from "../services/biz";
 import { rentFor } from "../services/realestate";
@@ -30,19 +31,25 @@ export default function PropertyCosts({ tab }) {
 
   /* ---------- utility bills ---------- */
   const consumption = (b) => (b.cur !== "" && b.prev !== "" && b.cur != null && b.prev != null ? Number(b.cur) - Number(b.prev) : null);
-  const saveBill = (e) => { e.preventDefault(); upsert("utils", { id: uid(), createdAt: new Date().toISOString(), ...f, amount: Number(f.amount) || 0, paid: false, billed: 0 }); close(); };
-  const payProvider = (b) => { upsert("expenses", { id: uid(), date: today, category: "utilities", amount: b.amount, payee: b.provider, method: "cash", branch: bName(b.propId), note: `${t("pr_ut_" + b.kind)} ${b.period}`, utilId: b.id }); upsert("utils", { ...b, paid: true }); };
+  const saveBill = (e) => {
+    e.preventDefault();
+    const fx = (f.currency || cur) !== cur ? Number(f.fx) || 0 : 1;
+    if (!fx) return toast(t("fx_missing"), "error");
+    upsert("utils", { id: uid(), createdAt: new Date().toISOString(), ...f, currency: f.currency || cur, fx, amount: Number(f.amount) || 0, amountMain: +((Number(f.amount) || 0) * fx).toFixed(2), paid: false, billed: 0 });   // the rate used stays with the bill
+    close();
+  };
+  const payProvider = (b) => { upsert("expenses", { id: uid(), date: today, category: "utilities", amount: b.amountMain ?? b.amount, payee: b.provider, method: "cash", branch: bName(b.propId), note: `${t("pr_ut_" + b.kind)} ${b.period}`, utilId: b.id }); upsert("utils", { ...b, paid: true }); };
   const chargeTenants = (b) => {
     const ls = b.unitId ? biz.leases.filter((l) => l.unitId === b.unitId && l.status === "active" && l.start <= b.period + "-31" && (!l.end || l.end >= b.period + "-01")).slice(0, 1) : eligible(b.propId, b.period, "chargeUtils");
     if (!ls.length) return toast(t("pr_noTenants"), "error");
-    const shares = b.unitId ? [b.amount] : split(b.amount, b.basis === "equal" ? ls.map(() => 1) : ls.map(areaOf));
+    const shares = b.unitId ? [b.amountMain ?? b.amount] : split(b.amountMain ?? b.amount, b.basis === "equal" ? ls.map(() => 1) : ls.map(areaOf));
     ls.forEach((l, i) => bill(l, b.period, [{ desc: `${t("pr_ut_" + b.kind)} — ${b.period}`, price: shares[i] }], { utilId: b.id }));
     upsert("utils", { ...b, billed: ls.length }); toast(`${ls.length} ${t("pr_generated")}`, "success");
   };
 
   /* ---------- shared services ---------- */
   const staffPay = (propId) => biz.employees.filter((e) => e.propId === propId && e.role === "cleaner" && e.status !== "ended").reduce((a, e) => a + payroll(e).net, 0);
-  const amountOf = (s) => (s.fromStaff ? staffPay(s.propId) : Number(s.amount) || 0);
+  const amountOf = (s) => (s.fromStaff ? staffPay(s.propId) : (Number(s.amount) || 0) * (s.currency && s.currency !== cur ? Number(s.fx) || biz.rates[s.currency] || 0 : 1));   // always in the main currency
   const plan = biz.props.map((b) => {
     const items = biz.shared.filter((s) => s.propId === b.id), ls = eligible(b.id, period, "chargeShared");
     const lines = ls.map(() => []);
@@ -61,10 +68,10 @@ export default function PropertyCosts({ tab }) {
 
   if (tab === "bills") return (
     <>
-      <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => biz.props.length ? (setF({ propId: biz.props[0].id, unitId: "", kind: "electricity", period: today.slice(0, 7), provider: "", amount: "", prev: "", cur: "", rate: "", basis: "area", notes: "" }), setModal("bill")) : toast(t("pr_needBuilding"), "error")}><IconPlus />{t("pr_newBill")}</button>
+      <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => biz.props.length ? (setF({ propId: biz.props[0].id, unitId: "", kind: "electricity", period: today.slice(0, 7), provider: "", amount: "", currency: cur, fx: "", prev: "", cur: "", rate: "", basis: "area", notes: "" }), setModal("bill")) : toast(t("pr_needBuilding"), "error")}><IconPlus />{t("pr_newBill")}</button>
       {biz.utils.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : biz.utils.map((b) => (
         <div key={b.id} className="glass card" style={{ display: "grid", gap: "0.4rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}><strong>{t("pr_ut_" + b.kind)} · <bdi dir="ltr">{b.period}</bdi></strong><b dir="ltr">{fmt(b.amount)} {cur}</b></div>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}><strong>{t("pr_ut_" + b.kind)} · <bdi dir="ltr">{b.period}</bdi></strong><b dir="ltr">{fmt(b.amount)} {b.currency || cur}</b></div>
           <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{bName(b.propId)}{b.unitId ? ` · ${biz.units.find((u) => u.id === b.unitId)?.name}` : ` · ${t("pr_wholeBuilding")}`}{b.provider && ` · ${b.provider}`}{consumption(b) != null && ` · ${consumption(b)} ${t("pr_consumed")}`}</div>
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
             {b.paid ? <span className="badge badge-green">{t("pr_paidProv")}</span> : <button className="btn btn-ghost btn-sm" onClick={() => payProvider(b)}>{t("pr_payProv")}</button>}
@@ -79,7 +86,7 @@ export default function PropertyCosts({ tab }) {
         <F label={t("map_kind")}><select className="select" value={f.kind} onChange={set("kind")}>{KINDS.map((k) => <option key={k} value={k}>{t("pr_ut_" + k)}</option>)}</select></F>
         <F label={t("pr_period")}><input className="input" type="month" required value={f.period} onChange={set("period")} {...ltr} /></F>
         <F label={t("pr_provider")}><input className="input" value={f.provider} onChange={set("provider")} /></F>
-        <F label={`${t("amount")} (${cur}) *`}><input className="input" type="number" min="0" step="any" required value={f.amount} onChange={set("amount")} {...ltr} /></F>
+        <F label={t("amount") + " *"}><MoneyInput f={f} setF={setF} amount="amount" currency="currency" fx="fx" required /></F>
         <F label={t("pr_prev")}><input className="input" type="number" step="any" value={f.prev} onChange={set("prev")} {...ltr} /></F>
         <F label={t("pr_curr")}><input className="input" type="number" step="any" value={f.cur} onChange={set("cur")} {...ltr} /></F>
         <F label={t("pr_rate")}><input className="input" type="number" min="0" step="any" value={f.rate} onChange={set("rate")} {...ltr} /></F>
@@ -92,7 +99,7 @@ export default function PropertyCosts({ tab }) {
 
   return (
     <>
-      <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => biz.props.length ? (setF({ propId: biz.props[0].id, name: "", kind: "cleaning", amount: "", fromStaff: false, basis: "area" }), setModal("item")) : toast(t("pr_needBuilding"), "error")}><IconPlus />{t("pr_newShared")}</button>
+      <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} onClick={() => biz.props.length ? (setF({ propId: biz.props[0].id, name: "", kind: "cleaning", amount: "", currency: cur, fx: "", fromStaff: false, basis: "area" }), setModal("item")) : toast(t("pr_needBuilding"), "error")}><IconPlus />{t("pr_newShared")}</button>
       {biz.shared.map((s) => <div key={s.id} className="glass card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
         <span><strong>{s.name}</strong> · {bName(s.propId)} · {t("pr_sk_" + s.kind)} · {t("pr_b_" + s.basis)}</span>
         <span><b dir="ltr">{fmt(amountOf(s))} {cur}</b>{s.fromStaff && <span className="badge badge-blue"> {t("pr_fromStaff")}</span>}<button className="icon-btn" aria-label={t("delete")} onClick={() => setDel({ fn: () => remove("shared", s.id) })}><IconTrash /></button></span></div>)}
@@ -103,12 +110,12 @@ export default function PropertyCosts({ tab }) {
         {plan.map((p) => <Summary key={p.b.id} cur={cur} title={p.b.name} rows={[{ label: t("pr_totalCost"), value: p.total, sub: true }, { label: t("pr_billedTenants"), value: p.billed, tone: "minus" }]} total={{ label: t("pr_ownerPays"), value: p.total - p.billed }} />)}
         <button className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} disabled={!plan.some((p) => p.todo.length)} onClick={generate}>{t("pr_generate")}</button>
         <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-3)" }}>{t("pr_sharedNote")}</p></div>)}
-      {modal === "item" && <Modal title={t("pr_newShared")} onClose={close}><form onSubmit={(e) => { e.preventDefault(); upsert("shared", { id: uid(), ...f, amount: Number(f.amount) || 0 }); close(); }}><Grid>
+      {modal === "item" && <Modal title={t("pr_newShared")} onClose={close}><form onSubmit={(e) => { e.preventDefault(); const fx = (f.currency || cur) !== cur ? Number(f.fx) || 0 : 1; if (!fx) return toast(t("fx_missing"), "error"); upsert("shared", { id: uid(), ...f, currency: f.currency || cur, fx, amount: Number(f.amount) || 0 }); close(); }}><Grid>
         <F label={t("pr_building")}><select className="select" value={f.propId} onChange={set("propId")}>{biz.props.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></F>
         <F label={t("map_name") + " *"}><input className="input" required value={f.name} onChange={set("name")} /></F>
         <F label={t("map_kind")}><select className="select" value={f.kind} onChange={set("kind")}>{SKINDS.map((k) => <option key={k} value={k}>{t("pr_sk_" + k)}</option>)}</select></F>
         <F label={t("pr_source")}><select className="select" value={f.fromStaff ? "1" : ""} onChange={(e) => setF((p) => ({ ...p, fromStaff: !!e.target.value }))}><option value="">{t("pr_manual")}</option><option value="1">{t("pr_fromStaff")}</option></select></F>
-        {!f.fromStaff && <F label={`${t("pr_monthlyCost")} (${cur})`}><input className="input" type="number" min="0" step="any" value={f.amount} onChange={set("amount")} {...ltr} /></F>}
+        {!f.fromStaff && <F label={t("pr_monthlyCost")}><MoneyInput f={f} setF={setF} amount="amount" currency="currency" fx="fx" /></F>}
         <F label={t("pr_basis")}><select className="select" value={f.basis} onChange={set("basis")}><option value="area">{t("pr_b_area")}</option><option value="equal">{t("pr_b_equal")}</option><option value="rent">{t("pr_b_rent")}</option></select></F></Grid>
         {f.fromStaff && <p style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{t("pr_staffHelp")} <b dir="ltr">{fmt(staffPay(f.propId))} {cur}</b></p>}
         <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end" }}><button type="button" className="btn btn-ghost btn-sm" onClick={close}>{t("cancel")}</button><button className="btn btn-primary btn-sm">{t("save")}</button></div></form></Modal>}

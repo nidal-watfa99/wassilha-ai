@@ -3,6 +3,7 @@ import { api } from "../services/api";
 import { useApp } from "../context/AppContext";
 import { Modal, EmptyState, ConfirmDialog } from "../components/UI";
 import { IconBox, IconPlus, IconEdit, IconTrash } from "../components/Icons";
+import MoneyInput from "../components/MoneyInput";
 import PropertyCosts from "./PropertyCosts";
 import MapPicker from "../components/MapPicker";
 import CurrencyPicker from "../components/CurrencyPicker";
@@ -96,8 +97,8 @@ export default function Properties() {
 
       {tab === "units" && (<>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button className="btn btn-primary btn-sm" onClick={() => biz.props.length ? open("unit", null, { propId: bf || biz.props[0].id, floor: "", name: "", type: "shop", area: "", baseRent: "", furnished: "", rooms: "", maint: false, notes: "" }) : toast(t("pr_needBuilding"), "error")}><IconPlus />{t("pr_newUnit")}</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => biz.props.length ? open("gen", null, { propId: bf || biz.props[0].id, from: 1, to: 5, per: 4, prefix: "", type: "apartment", area: "", furnished: "", baseRent: "" }) : toast(t("pr_needBuilding"), "error")}>⚡ {t("pr_gen")}</button>
+          <button className="btn btn-primary btn-sm" onClick={() => biz.props.length ? open("unit", null, { propId: bf || biz.props[0].id, floor: "", name: "", type: "shop", area: "", baseRent: "", baseCur: cur, baseFx: "", furnished: "", rooms: "", maint: false, notes: "" }) : toast(t("pr_needBuilding"), "error")}><IconPlus />{t("pr_newUnit")}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => biz.props.length ? open("gen", null, { propId: bf || biz.props[0].id, from: 1, to: 5, per: 4, prefix: "", type: "apartment", area: "", furnished: "", baseRent: "", baseCur: cur, baseFx: "" }) : toast(t("pr_needBuilding"), "error")}>⚡ {t("pr_gen")}</button>
           <select className="select" style={{ width: "auto" }} value={bf} onChange={(e) => setBf(e.target.value)}><option value="">{t("map_filter")}</option>{biz.props.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select>
         </div>
         {shownUnits.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : shownUnits.map(([u, s]) => {
@@ -107,7 +108,7 @@ export default function Properties() {
               <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}><strong>{uLabel(u)}</strong><span className={`badge ${badge[s]}`}>{t("pr_s_" + s)}</span></div>
               <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{t("pr_u_" + u.type)}{HOME.includes(u.type) && u.furnished && ` · ${t("pr_f_" + u.furnished)}`}{HOME.includes(u.type) && u.rooms && ` · ${u.rooms} ${t("pr_rooms")}`} · {u.area || "—"} m²{l && ` · ${l.tenant} · ${fmt(rentFor(l, today.slice(0, 7)))} ${l.currency || cur}`}</div>
               <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
-                {s === "vacant" && <button className="btn btn-primary btn-sm" onClick={() => open("lease", null, { unitId: u.id, tenant: "", phone: "", start: today, end: "", rent: u.baseRent || "", currency: cur, cycle: "monthly", dueDay: 1, deposit: "", increase: "", status: "active", notes: "", no: "" })}>{t("pr_newLease")}</button>}
+                {s === "vacant" && <button className="btn btn-primary btn-sm" onClick={() => open("lease", null, { unitId: u.id, tenant: "", phone: "", start: today, end: "", rent: u.baseRent || "", currency: u.baseCur || cur, cycle: "monthly", dueDay: 1, deposit: "", increase: "", status: "active", notes: "", no: "" })}>{t("pr_newLease")}</button>}
                 <button className="icon-btn" aria-label={t("b_edit")} onClick={() => open("unit", u)}><IconEdit /></button>
                 <button className="icon-btn" aria-label={t("delete")} onClick={() => biz.leases.some((x) => x.unitId === u.id) ? toast(t("pr_hasLeases"), "error") : setDel({ coll: "units", x: u })}><IconTrash /></button>
               </div>
@@ -151,7 +152,7 @@ export default function Properties() {
         const have = new Set(biz.units.filter((u) => u.propId === f.propId).map((u) => u.name)); let n = 0;
         for (let fl = Number(f.from); fl <= Number(f.to); fl++) for (let k = 1; k <= Number(f.per); k++) {
           const name = `${f.prefix}${fl}${pad2(k)}`; if (have.has(name)) continue;
-          upsert("units", { id: uid(), propId: f.propId, floor: String(fl), name, type: f.type, area: f.area, baseRent: f.baseRent, furnished: f.furnished, rooms: "", maint: false, notes: "" }); n++;
+          upsert("units", { id: uid(), propId: f.propId, floor: String(fl), name, type: f.type, area: f.area, baseRent: f.baseRent, baseCur: f.baseCur, baseFx: f.baseFx, furnished: f.furnished, rooms: "", maint: false, notes: "" }); n++;
         }
         toast(`${n} ${t("pr_created")}`, "success"); close();
       }}><Grid>
@@ -162,7 +163,7 @@ export default function Properties() {
         <F label={t("pr_prefix")}><input className="input" value={f.prefix} onChange={set("prefix")} {...ltr} /></F>
         <F label={t("map_kind")}><select className="select" value={f.type} onChange={set("type")}>{U_TYPES.map((k) => <option key={k} value={k}>{t("pr_u_" + k)}</option>)}</select></F>
         <F label={t("pr_area")}><input className="input" type="number" min="0" step="any" value={f.area} onChange={set("area")} {...ltr} /></F>
-        <F label={t("pr_baseRent")}><input className="input" type="number" min="0" step="any" value={f.baseRent} onChange={set("baseRent")} {...ltr} /></F>
+        <F label={t("pr_baseRent")}><MoneyInput f={f} setF={setF} amount="baseRent" currency="baseCur" fx="baseFx" /></F>
         {HOME.includes(f.type) && <F label={t("pr_furnished")}><select className="select" value={f.furnished || ""} onChange={set("furnished")}><option value="">—</option><option value="furnished">{t("pr_f_furnished")}</option><option value="unfurnished">{t("pr_f_unfurnished")}</option></select></F>}</Grid>
         <p style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{t("pr_genHelp")} <bdi dir="ltr">{f.prefix}{f.from}01 … {f.prefix}{f.to}{pad2(f.per)}</bdi> · {(Math.max(Number(f.to) - Number(f.from) + 1, 0)) * Number(f.per || 0)} {t("pr_units")}</p>
         <Foot t={t} onCancel={close} /></form></Modal>}
@@ -172,7 +173,7 @@ export default function Properties() {
         <F label={t("pr_unitNo") + " *"}><input className="input" required value={f.name} onChange={set("name")} /></F>
         <F label={t("map_kind")}><select className="select" value={f.type} onChange={set("type")}>{U_TYPES.map((k) => <option key={k} value={k}>{t("pr_u_" + k)}</option>)}</select></F>
         <F label={t("pr_area")}><input className="input" type="number" min="0" step="any" value={f.area} onChange={set("area")} {...ltr} /></F>
-        <F label={t("pr_baseRent")}><input className="input" type="number" min="0" step="any" value={f.baseRent} onChange={set("baseRent")} {...ltr} /></F>
+        <F label={t("pr_baseRent")}><MoneyInput f={f} setF={setF} amount="baseRent" currency="baseCur" fx="baseFx" /></F>
         <F label={t("pr_s_maintenance")}><select className="select" value={f.maint ? "1" : ""} onChange={(e) => setF((p) => ({ ...p, maint: !!e.target.value }))}><option value="">—</option><option value="1">{t("pr_s_maintenance")}</option></select></F>
         {HOME.includes(f.type) && <F label={t("pr_furnished")}><select className="select" value={f.furnished || ""} onChange={set("furnished")}><option value="">—</option><option value="furnished">{t("pr_f_furnished")}</option><option value="unfurnished">{t("pr_f_unfurnished")}</option></select></F>}
         {HOME.includes(f.type) && <F label={t("pr_rooms")}><input className="input" type="number" min="0" value={f.rooms || ""} onChange={set("rooms")} {...ltr} /></F>}</Grid><Foot t={t} onCancel={close} /></form></Modal>}

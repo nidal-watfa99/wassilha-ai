@@ -18,13 +18,14 @@ export function folio(s) {
   return { n, room, extras, inclTax, sub, disc, tax, total, paid, balance: total - paid };
 }
 /* occupancy, average daily rate and revenue per available room for one month (YYYY-MM) */
-export function kpis(rooms, stays, month) {
+export function kpis(rooms, stays, month, mult = () => 1) {
   const first = month + "-01", days = new Date(+month.slice(0, 4), +month.slice(5, 7), 0).getDate(), next = addDays(first, days);
-  let nights = 0, revenue = 0;
+  let nights = 0, revenue = 0, skipped = 0;
   stays.filter((s) => s.status !== "cancelled" && s.status !== "noshow").forEach((s) => {
     const a = s.checkIn > first ? s.checkIn : first, b = s.checkOut < next ? s.checkOut : next, n = nightsBetween(a, b);
-    nights += n; revenue += n * (Number(s.rate) || 0);
+    const m = mult(s); if (m == null) { skipped++; return; }          // no exchange rate: left out and reported
+    nights += n; revenue += n * (Number(s.rate) || 0) * m;
   });
   const avail = rooms.length * days;
-  return { nights, revenue, adr: nights ? revenue / nights : 0, revpar: avail ? revenue / avail : 0, occ: avail ? (nights / avail) * 100 : 0 };
+  return { skipped, nights, revenue, adr: nights ? revenue / nights : 0, revpar: avail ? revenue / avail : 0, occ: avail ? (nights / avail) * 100 : 0 };
 }

@@ -2,6 +2,7 @@
    and a snapshot of the user's real figures. Every number is computed here in code, never by the model.
    Only aggregates are included (no phone numbers, no per-employee salaries). */
 import { getExpiring } from "./realestate";
+import { getExpiring as getExpBatches } from "./distribution";
 import { getBiz, expMain, totals, paidOf, leftOf, fmt, getDue, getLow, stockLeft, payroll } from "./biz";
 
 export function buildSystemPrompt(extra = {}) {
@@ -23,6 +24,7 @@ export function buildSystemPrompt(extra = {}) {
     `Product catalog: ${b.catalog.length} products`,
     `Employees (not terminated): ${staff.length}; total net payroll this period: ${fmt(sum(staff, (e) => payroll(e).net))}`,
     `Properties: ${b.props.length} buildings, ${b.units.length} units, ${b.leases.filter((l) => l.status === "active").length} active leases, ${getExpiring(b).length} expiring soon`,
+    `Distribution: ${b.dorders.length} orders, ${getExpBatches(b).length} batches expired or expiring soon`,
     `Map places saved: ${b.places.length}`,
     `Contacts: ${extra.contacts ?? "?"} · open tasks: ${extra.tasksOpen ?? "?"} · documents: ${extra.documents ?? "?"}`,
   ];
