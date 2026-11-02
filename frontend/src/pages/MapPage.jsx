@@ -64,11 +64,15 @@ export default function MapPage() {
       const mk = L.marker([+b.lat, +b.lng], { icon: pin("#f97316") }).addTo(g), d = document.createElement("div");
       d.innerHTML = "<b></b><div></div>"; d.children[0].textContent = b.name; d.children[1].textContent = t("pr_b_" + b.type); mk.bindPopup(d);
     });
-  }, [biz.places, biz.props, filter, draft?.id, t]); // eslint-disable-line
+    Object.values(biz.profiles).filter((p) => p.lat !== "" && p.lat != null && p.lng !== "" && p.lng != null && (filter === "all" || filter === "contacts")).forEach((p) => {   // contacts with a saved location
+      const mk = L.marker([+p.lat, +p.lng], { icon: pin(["supplier", "importer", "exporter"].includes(p.type) ? "#a855f7" : "#38bdf8") }).addTo(g), d = document.createElement("div");
+      d.innerHTML = "<b></b><div></div><div></div>"; d.children[0].textContent = p.name || ""; d.children[1].textContent = t("ct_t_" + (p.type || "customer")); d.children[2].textContent = p.phone || ""; mk.bindPopup(d);
+    });
+  }, [biz.places, biz.props, biz.profiles, filter, draft?.id, t]); // eslint-disable-line
 
   // fit to markers on first load
   useEffect(() => {
-    const pts = [...biz.places.map((p) => [p.lat, p.lng]), ...biz.props.filter((b) => b.lat !== "" && b.lat != null && b.lng !== "").map((b) => [+b.lat, +b.lng])];
+    const pts = [...biz.places.map((p) => [p.lat, p.lng]), ...biz.props.filter((b) => b.lat !== "" && b.lat != null && b.lng !== "").map((b) => [+b.lat, +b.lng]), ...Object.values(biz.profiles).filter((p) => p.lat !== "" && p.lat != null && p.lng !== "" && p.lng != null).map((p) => [+p.lat, +p.lng])];
     if (pts.length) map.current.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 15 });
   }, []); // eslint-disable-line
 
@@ -163,7 +167,7 @@ export default function MapPage() {
       <div className="section-title">
         <h3 style={{ margin: 0 }}>{t("map_list")} ({shown.length})</h3>
         <select className="select" style={{ width: "auto" }} value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="all">{t("map_filter")}</option><option value="building">{t("pr_buildings")}</option>{KINDS.map((k) => <option key={k} value={k}>{t("map_" + k)}</option>)}
+          <option value="all">{t("map_filter")}</option><option value="building">{t("pr_buildings")}</option><option value="contacts">{t("contacts")}</option>{KINDS.map((k) => <option key={k} value={k}>{t("map_" + k)}</option>)}
         </select>
       </div>
       {shown.length === 0 && <div className="empty-state"><IconMap /><p style={{ margin: 0 }}>{t("b_none")}</p></div>}

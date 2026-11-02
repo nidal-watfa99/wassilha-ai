@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { Modal } from "../components/UI";
 import { IconPlus, IconTrash } from "../components/Icons";
 import { F, Grid, Sec, useForm } from "../components/Form";
+import MapPicker from "../components/MapPicker";
 import MoneyInput from "../components/MoneyInput";
 import Summary from "../components/Summary";
 import MediaView from "../components/MediaView";
@@ -11,13 +12,13 @@ import { useBiz, setProfile, upsert, uid, nextNo, todayStr, finOf, CONTACT_TYPES
 import { putMedia, getMedia, delMedia, compressImage } from "../services/media";
 import { waPhone } from "../services/phone";
 
-const BLANK = { type: "customer", tier: "", areaId: "", creditCur: "", creditFx: "", profession: "", nationality: "", address: "", city: "", bizNature: "", taxNo: "", creditLimit: "", notes2: "", media: [] };
+const BLANK = { type: "customer", tier: "", area: "", lat: "", lng: "", creditCur: "", creditFx: "", profession: "", nationality: "", address: "", city: "", bizNature: "", taxNo: "", creditLimit: "", notes2: "", media: [] };
 
 export default function ContactProfile({ contact, onClose }) {
   const { t, toast } = useApp();
   const biz = useBiz(), nav = useNavigate();
   const [f, set, setF] = useForm({ ...BLANK, ...(biz.profiles[contact.id] || {}) });
-  const [recording, setRecording] = useState(false);
+  const [recording, setRecording] = useState(false), [picker, setPicker] = useState(false);
   const rec = useRef(null), trash = useRef([]), fileRef = useRef(null);
   const fin = finOf(biz, contact.name);
   const limitMain = (Number(f.creditLimit) || 0) * (f.creditCur && f.creditCur !== biz.currency ? Number(f.creditFx) || biz.rates[f.creditCur] || 0 : 1);
@@ -58,9 +59,9 @@ export default function ContactProfile({ contact, onClose }) {
     } catch { /* user cancelled */ }
   };
   const drop = (m) => { trash.current.push(m.id); setF((p) => ({ ...p, media: p.media.filter((x) => x.id !== m.id) })); };
-  const save = (e) => { e.preventDefault(); trash.current.forEach(delMedia); setProfile(contact.id, f); onClose(); };
+  const save = (e) => { e.preventDefault(); trash.current.forEach(delMedia); setProfile(contact.id, { ...f, name: contact.name, phone: contact.phone || "" }); onClose(); };
   const newInvoice = () => {
-    setProfile(contact.id, f);
+    setProfile(contact.id, { ...f, name: contact.name, phone: contact.phone || "" });
     upsert("invoices", { id: uid(), no: nextNo("invoice"), type: "invoice", customer: contact.name, issueDate: todayStr(), dueDate: "", currency: biz.currency, discount: 0, tax: biz.taxRate, notes: "", paidAmount: "", status: "draft", items: [{ desc: "", qty: 1, price: "", unit: "" }] });
     nav("/invoices");
   };
@@ -81,7 +82,9 @@ export default function ContactProfile({ contact, onClose }) {
         <Grid>
           <F label={t("ct_type")}><select className="select" value={f.type} onChange={set("type")}>{CONTACT_TYPES.map((k) => <option key={k} value={k}>{t("ct_t_" + k)}</option>)}</select></F>
           <F label={t("ds_tier")}><select className="select" value={f.tier || ""} onChange={set("tier")}><option value="">{t("ds_t_retail")}</option><option value="wholesale">{t("ds_t_wholesale")}</option><option value="distributor">{t("ds_t_distributor")}</option></select></F>
-          {biz.areas.length > 0 && <F label={t("ds_area")}><select className="select" value={f.areaId || ""} onChange={set("areaId")}><option value="">—</option>{biz.areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></F>}
+          <F label={t("ds_area")}><input className="input" list="ar" placeholder={t("ds_areaPh")} value={f.area || ""} onChange={set("area")} /><datalist id="ar">{biz.areas.map((a) => <option key={a.id} value={a.name} />)}</datalist></F>
+          <F label={t("map_lat")}><input className="input" type="number" step="any" value={f.lat} onChange={set("lat")} {...ltr} /></F>
+          <F label={t("map_lng")}><input className="input" type="number" step="any" value={f.lng} onChange={set("lng")} {...ltr} /></F>
           <F label={t("ct_profession")}><input className="input" value={f.profession} onChange={set("profession")} /></F>
           <F label={t("emp_nation")}><input className="input" value={f.nationality} onChange={set("nationality")} /></F>
           <F label={t("ct_bizNature")}><input className="input" value={f.bizNature} onChange={set("bizNature")} /></F>
@@ -91,6 +94,8 @@ export default function ContactProfile({ contact, onClose }) {
           <F label={t("ct_credit")}><MoneyInput f={f} setF={setF} amount="creditLimit" currency="creditCur" fx="creditFx" /></F>
         </Grid>
         {limitMain > 0 && fin.left > limitMain && <div style={{ color: "#ff8a9b", fontSize: "var(--text-sm)" }}>⚠ {t("ct_overCredit")}</div>}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicker(true)}>📍 {t("pr_pickMap")}</button>
+        {picker && <MapPicker lat={f.lat} lng={f.lng} onPick={(la, lo) => setF((p) => ({ ...p, lat: la, lng: lo }))} onClose={() => setPicker(false)} />}
         <F label={t("emp_notes")}><textarea className="textarea" rows={2} value={f.notes2} onChange={set("notes2")} /></F>
         <Sec>{t("ct_sec_media")}</Sec>
         <div style={{ display: "grid", gap: "0.6rem" }}>

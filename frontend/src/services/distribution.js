@@ -24,3 +24,14 @@ export function collectPlan(invoices, amount) {
   });
   return { plan, unallocated: Math.max(left, 0) };
 }
+
+/* loose search for the item picker: name, code or barcode; Arabic letter variants are treated alike */
+export const normSearch = (x) => String(x || "").replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).toLowerCase().replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim();
+export function searchItems(items, q, limit = 8) {
+  const n = normSearch(q); if (!n) return items.slice(0, limit);
+  const key = (i) => [i.name, i.sku, i.barcode, i.brand, i.category].map(normSearch);
+  const exact = items.filter((i) => [i.sku, i.barcode].map((x) => String(x || "")).includes(String(q).trim()));
+  const starts = items.filter((i) => normSearch(i.name).startsWith(n) && !exact.includes(i));
+  const has = items.filter((i) => key(i).some((k) => k.includes(n)) && !exact.includes(i) && !starts.includes(i));
+  return [...exact, ...starts, ...has].slice(0, limit);
+}

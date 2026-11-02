@@ -1,5 +1,12 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+bc_title: "Scan barcode", bc_err: "Could not open the camera or this browser cannot read barcodes. A USB / Bluetooth scanner works without it: click the field and scan.", bc_hint: "Point the camera at the barcode.", mt_download: "Download",
+  it_sec_basic: "Identification", it_sec_stock: "Stock & storage", it_sec_price: "Cost & prices", it_sec_details: "Details", it_sec_custom: "Your own fields", it_sec_media: "Photos, videos & files",
+  it_barcode: "Barcode", it_manufacturer: "Manufacturer / factory", it_origin: "Country / region of origin", it_perCarton: "Pieces per carton", it_maxQty: "Maximum stock", it_reorder: "Reorder quantity",
+  it_shelfDays: "Shelf life (days)", it_storage: "Storage conditions", it_priceNote: "Cost and prices can be typed in any currency; they are saved in the main currency using the rate you give.",
+  it_customHelp: "Add any detail this item needs (strength, dosage form, license no., size…). Nothing is fixed.", it_fieldName: "Field name", it_fieldValue: "Value", it_addField: "Add field",
+  ds_item: "Item (type or scan)", ds_itemPh: "Type a name, code or barcode", ds_unitPrice: "Price per unit", ds_bonusLabel: "Free bonus quantity", ds_freeItem: "Free item — billed without touching stock",
+  ds_orderCur: "Order currency", ds_reprice: "Recalculate prices", ds_areaPh: "Type the route / area name", ds_areasHelp: "Areas are created automatically when you type them in an order. Add one here only to set a driver or delivery day.",
 distribution: "Distribution", type_distributor: "Wholesale / distributor", ds_orders: "Orders", ds_deliver: "Delivery routes", ds_accounts: "Customer accounts", ds_expiry: "Batches & expiry", ds_areas: "Areas",
   ds_newOrder: "New distribution order", ds_customer: "Customer (outlet)", ds_area: "Area / route", ds_tier: "Price level", ds_t_retail: "Retail", ds_t_wholesale: "Wholesale", ds_t_distributor: "Distributor",
   ds_priceW: "Wholesale price", ds_priceD: "Distributor price", ds_bonus: "Bonus (free)", ds_paidNow: "Paid now", ds_saveDraft: "Save draft", ds_confirm: "Confirm & issue invoice", ds_override: "Approve anyway",
@@ -159,6 +166,13 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+bc_title: "مسح الباركود", bc_err: "تعذّر فتح الكاميرا أو أن هذا المتصفح لا يقرأ الباركود. قارئ الباركود (USB أو بلوتوث) يعمل بدونها: اضغط على الخانة وامسح.", bc_hint: "وجّه الكاميرا نحو الباركود.", mt_download: "تنزيل",
+  it_sec_basic: "التعريف", it_sec_stock: "المخزون والتخزين", it_sec_price: "التكلفة والأسعار", it_sec_details: "التفاصيل", it_sec_custom: "حقولك الخاصة", it_sec_media: "صور وفيديو وملفات",
+  it_barcode: "الباركود", it_manufacturer: "المصنع / المنتِج", it_origin: "بلد / منطقة المنشأ", it_perCarton: "عدد القطع في الكرتون", it_maxQty: "الحد الأعلى للمخزون", it_reorder: "كمية إعادة الطلب",
+  it_shelfDays: "مدة الصلاحية (أيام)", it_storage: "شروط التخزين", it_priceNote: "اكتب التكلفة والأسعار بأي عملة؛ وتُحفظ بالعملة الأساسية حسب السعر الذي تحدده.",
+  it_customHelp: "أضف أي تفصيل يحتاجه هذا الصنف (التركيز، الشكل الدوائي، رقم الترخيص، المقاس…). لا شيء ثابت.", it_fieldName: "اسم الحقل", it_fieldValue: "القيمة", it_addField: "إضافة حقل",
+  ds_item: "الصنف (اكتب أو امسح)", ds_itemPh: "اكتب اسماً أو رمزاً أو باركود", ds_unitPrice: "سعر الوحدة", ds_bonusLabel: "كمية البونص المجانية", ds_freeItem: "صنف حر — يُفوتَر دون المساس بالمخزون",
+  ds_orderCur: "عملة الطلب", ds_reprice: "إعادة حساب الأسعار", ds_areaPh: "اكتب اسم الخط / المنطقة", ds_areasHelp: "تُنشأ المناطق تلقائياً عند كتابتها في الطلب. أضف منطقة هنا فقط لتحديد سائق أو يوم توصيل.",
 distribution: "التوزيع بالجملة", type_distributor: "جملة / موزّع", ds_orders: "الطلبات", ds_deliver: "خطوط التوزيع", ds_accounts: "حسابات الزبائن", ds_expiry: "الدفعات والصلاحية", ds_areas: "المناطق",
   ds_newOrder: "طلب توزيع جديد", ds_customer: "الزبون (المحل)", ds_area: "المنطقة / الخط", ds_tier: "مستوى السعر", ds_t_retail: "مفرق", ds_t_wholesale: "جملة", ds_t_distributor: "موزّع",
   ds_priceW: "سعر الجملة", ds_priceD: "سعر الموزّع", ds_bonus: "بونص (مجاني)", ds_paidNow: "المدفوع الآن", ds_saveDraft: "حفظ مسودة", ds_confirm: "اعتماد وإصدار الفاتورة", ds_override: "اعتماد رغم ذلك",

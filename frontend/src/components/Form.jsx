@@ -12,7 +12,7 @@ export const Grid = ({ children }) => (
 export const Sec = ({ children }) => (
   <h4 style={{ margin: "1.1rem 0 0.5rem", color: "var(--cyan)", fontSize: "var(--text-sm)" }}>{children}</h4>
 );
-export const ltr = { dir: "ltr", style: { textAlign: "start" } };
+export const ltr = { dir: "ltr", lang: "en", style: { textAlign: "start" } };   // Latin digits and a stable date format inside right-to-left pages
 
 export function useForm(init) {
   const [v, setV] = useState(init);
