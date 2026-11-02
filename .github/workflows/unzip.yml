@@ -15,12 +15,24 @@ jobs:
       - name: Extract project
         run: |
           set -e
-          mkdir -p /tmp/extract
-          unzip -o -q wassilha-ai-fixed.zip -d /tmp/extract
+          echo "Files in repository root:"
+          ls -la
+          ZIP=$(ls -t *.zip 2>/dev/null | head -n 1 || true)
+          if [ -z "$ZIP" ]; then
+            echo "::error::No .zip file found in the repository root. Upload the zip first (Add file > Upload files), wait until it appears in the file list, then run again."
+            exit 1
+          fi
+          echo "Using: $ZIP"
+          rm -rf /tmp/extract && mkdir -p /tmp/extract
+          unzip -o -q "$ZIP" -d /tmp/extract
           SRC=$(find /tmp/extract -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          if [ -z "$SRC" ]; then
+            echo "::error::The zip has no project folder inside."
+            exit 1
+          fi
           rm -rf "$SRC/.github"
           cp -a "$SRC"/. .
-          rm -f wassilha-ai-fixed.zip
+          rm -f -- "$ZIP"
 
       - name: Commit
         run: |
@@ -30,6 +42,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes"
           else
-            git commit -m "Extract wassilha-ai-fixed.zip"
+            git commit -m "Extract project zip"
             git push
           fi
