@@ -30,6 +30,7 @@ const NAV = [
   { to: "/ai-models", key: "aimodels", Icon: IconSpark },
   { to: "/restaurant", key: "restaurant", Icon: IconBox },
   { to: "/purchases", key: "purchases", Icon: IconBox },
+  { to: "/library", key: "library", Icon: IconBox },
   { to: "/distribution", key: "distribution", Icon: IconBox },
   { to: "/hotel", key: "hotel", Icon: IconBox },
   { to: "/properties", key: "properties", Icon: IconBox },
