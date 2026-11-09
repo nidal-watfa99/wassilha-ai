@@ -32,6 +32,7 @@ import Properties from "./pages/Properties";
 import Hotel from "./pages/Hotel";
 import Distribution from "./pages/Distribution";
 import Library from "./pages/Library";
+import Agencies from "./pages/Agencies";
 
 function PrivateRoute({ children }) {
   const { user, authChecked } = useApp();
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="hotel" element={<Hotel />} />
           <Route path="distribution" element={<Distribution />} />
           <Route path="library" element={<Library />} />
+          <Route path="agencies" element={<Agencies />} />
           <Route path="reports" element={<Reports />} />
           <Route path="catalog" element={<Catalog />} />
           <Route path="inventory" element={<Inventory />} />

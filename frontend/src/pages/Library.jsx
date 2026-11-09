@@ -8,6 +8,9 @@ import Summary from "../components/Summary";
 import CurrencyPicker from "../components/CurrencyPicker";
 import ItemPicker from "../components/ItemPicker";
 import { Services, Generator, Reorder } from "./LibraryTools";
+import ExpenseHub from "./ExpenseHub";
+import LibrarySuppliers from "./LibrarySuppliers";
+import { useLocation } from "react-router-dom";
 import { useBiz, upsert, update, uid, fmt, nextNo, todayStr, totals, stockLeft } from "../services/biz";
 import { lineNeeds, saleCost, takeStock } from "../services/pos";
 import { tierPrice } from "../services/distribution";
@@ -115,12 +118,12 @@ function Daily() {
 
 export default function Library() {
   const { t } = useApp();
-  const [tab, setTab] = useState("pos");
+  const loc = useLocation(), [tab, setTab] = useState(loc.state?.tab || "pos");
   return (
     <div style={{ display: "grid", gap: "0.9rem" }}>
       <div className="section-title"><h2>{t("library")}</h2></div>
-      <div className="tabs">{[["pos", "lb_pos"], ["services", "lb_services"], ["gen", "lb_gen"], ["reorder", "lb_reorder"], ["daily", "lb_daily"]].map(([k, l]) => <button key={k} className={`btn btn-sm ${tab === k ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab(k)}>{t(l)}</button>)}</div>
-      {tab === "pos" && <Pos />}{tab === "services" && <Services />}{tab === "gen" && <Generator />}{tab === "reorder" && <Reorder />}{tab === "daily" && <Daily />}
+      <div className="tabs">{[["pos", "lb_pos"], ["services", "lb_services"], ["gen", "lb_gen"], ["reorder", "lb_reorder"], ["sup", "lb_suppliers"], ["exp", "lb_expenses"], ["daily", "lb_daily"]].map(([k, l]) => <button key={k} className={`btn btn-sm ${tab === k ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab(k)}>{t(l)}</button>)}</div>
+      {tab === "pos" && <Pos />}{tab === "services" && <Services />}{tab === "gen" && <Generator />}{tab === "reorder" && <Reorder />}{tab === "sup" && <LibrarySuppliers />}{tab === "exp" && <ExpenseHub />}{tab === "daily" && <Daily />}
     </div>
   );
 }

@@ -25,6 +25,7 @@ export function buildSystemPrompt(extra = {}) {
     `Employees (not terminated): ${staff.length}; total net payroll this period: ${fmt(sum(staff, (e) => payroll(e).net))}`,
     `Properties: ${b.props.length} buildings, ${b.units.length} units, ${b.leases.filter((l) => l.status === "active").length} active leases, ${getExpiring(b).length} expiring soon`,
     `Distribution: ${b.dorders.length} orders, ${getExpBatches(b).length} batches expired or expiring soon`,
+    `Agencies: ${b.agencies.length} agreements, ${b.shipments.length} shipments (${b.shipments.filter((s) => !s.received).length} not received)`,
     `Map places saved: ${b.places.length}`,
     `Contacts: ${extra.contacts ?? "?"} · open tasks: ${extra.tasksOpen ?? "?"} · documents: ${extra.documents ?? "?"}`,
   ];

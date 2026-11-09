@@ -12,6 +12,8 @@ import {
 import { useBiz, isOn, getDue, getLow } from "../services/biz";
 import { getExpiring } from "../services/realestate";
 import { getExpiring as getExpBatches } from "../services/distribution";
+import { dueBills } from "../services/expensehub";
+import { endingContracts } from "../services/agencies";
 import { SetupWizard } from "../pages/Business";
 import { LOCALES } from "../i18n";
 import { LOCAL_MODE } from "../services/api";
@@ -30,6 +32,7 @@ const NAV = [
   { to: "/ai-models", key: "aimodels", Icon: IconSpark },
   { to: "/restaurant", key: "restaurant", Icon: IconBox },
   { to: "/purchases", key: "purchases", Icon: IconBox },
+  { to: "/agencies", key: "agencies", Icon: IconBox },
   { to: "/library", key: "library", Icon: IconBox },
   { to: "/distribution", key: "distribution", Icon: IconBox },
   { to: "/hotel", key: "hotel", Icon: IconBox },
@@ -67,7 +70,9 @@ export function Layout() {
   const low = getLow(biz);
   const lapsing = getExpiring(biz);
   const lots = getExpBatches(biz);
-  const alerts = due.length + low.length + lapsing.length + lots.length;
+  const billsDue = dueBills(biz, new Date().toISOString().slice(0, 10));
+  const alerts = due.length + low.length + lapsing.length + lots.length + billsDue.length + endingContracts(biz, new Date().toISOString().slice(0, 10)).length;
+  const goAlert = () => (due.length ? navigate("/invoices") : low.length ? navigate("/inventory") : lots.length ? navigate("/distribution") : billsDue.length ? navigate("/library", { state: { tab: "exp" } }) : endingContracts(biz, new Date().toISOString().slice(0, 10)).length ? navigate("/agencies") : navigate("/properties"));
 
   // browser notification for due invoices (once per day, while the app is open)
   useEffect(() => {
@@ -145,7 +150,7 @@ export function Layout() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             {alerts > 0 && (
-              <button className="icon-btn" style={{ position: "relative" }} onClick={() => navigate(due.length ? "/invoices" : low.length ? "/inventory" : lots.length ? "/distribution" : "/properties")} aria-label={t("inv_dueTitle")} title={t("inv_dueTitle")}>
+              <button className="icon-btn" style={{ position: "relative" }} onClick={goAlert} aria-label={t("inv_dueTitle")} title={t("inv_dueTitle")}>
                 <IconBell />
                 <span className="badge badge-red" style={{ position: "absolute", top: -4, insetInlineEnd: -4, padding: "0 5px", fontSize: "0.65rem" }}>{alerts}</span>
               </button>
