@@ -12,7 +12,7 @@ import { useBiz, upsert, remove, uid, fmt, todayStr, expMain } from "../services
 import { billStatus, payrollRows } from "../services/expensehub";
 import { delMedia } from "../services/media";
 
-const QUICK = ["electricity", "water", "comm", "taxes", "rent", "maintenance", "transport", "other"];
+const QUICK = ["electricity", "water", "comm", "taxes", "rent", "transport", "fuel", "vehicle", "maintenance", "other"];
 const METHODS = ["cash", "transfer", "wallet", "card"];
 const Foot = ({ onCancel, t }) => <div style={{ display: "flex", gap: "0.7rem", justifyContent: "flex-end", marginTop: "0.7rem" }}><button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>{t("cancel")}</button><button className="btn btn-primary btn-sm">{t("save")}</button></div>;
 

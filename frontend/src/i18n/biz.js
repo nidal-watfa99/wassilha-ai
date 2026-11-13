@@ -1,5 +1,11 @@
 /* Business modules dictionary (Arabic + English; other locales fall back to English). */
 const en = {
+ag_invoices: "Invoices", ag_expenses: "Expenses", ag_dealers: "Principal & distributors", ag_profit: "Net profit", exp_fuel: "Fuel", exp_vehicle: "Vehicle upkeep",
+  ag_invHelp: "Invoices issued from your distribution orders. Collect payments from Distribution → Customer accounts (oldest invoice first).",
+  pf_range: "Custom period", pf_invoices: "Invoices counted", pf_income: "Income", pf_costs: "Cost of goods", pf_cogs: "Cost of goods sold", pf_expenses: "Running expenses",
+  pf_noRate: "invoices left out: no exchange rate for their currency", pf_noCost: "invoices have no cost recorded (their cost counts as zero): invoices from Distribution and Quick sale record it automatically.",
+  pf_noSalaries: "No salaries are recorded for this period. Pay them from Expenses → Salaries & wages so they enter the profit.",
+  pf_note: "Net profit = sales (without tax) − cost of the goods sold − running expenses. Goods you buy are not an expense when bought: they reach the profit when sold. Import costs are inside the item cost, and goods payments to the principal are not counted twice.",
 agencies: "Agencies", type_agency: "Agency / brand dealer", ag_over: "Overview", ag_agreements: "Agreements", ag_shipments: "Shipments", ag_newAgency: "New agency", ag_newShip: "New shipment",
   ag_none: "No agencies yet. Add the first agreement with a principal (brand owner).", ag_needAgency: "Add an agency agreement first.", ag_brand: "Brand / agency", ag_principal: "Principal company", ag_country: "Principal's country",
   ag_territory: "Territory covered", ag_territoryPh: "e.g. all of Syria / Damascus & suburbs", ag_exclusive: "Exclusive", ag_nonExclusive: "Non-exclusive", ag_exclusiveQ: "Exclusivity", ag_dealCur: "Currency of dealings",
@@ -203,6 +209,12 @@ inventory: "Inventory", inv_partial: "Deposit paid", inv_paidAmt: "Paid", inv_le
 };
 
 const ar = {
+ag_invoices: "الفواتير", ag_expenses: "المصروفات", ag_dealers: "الشركة الأم والموزّعون", ag_profit: "صافي الربح", exp_fuel: "وقود", exp_vehicle: "صيانة المركبات",
+  ag_invHelp: "الفواتير الصادرة من طلبات التوزيع. حصّل الدفعات من التوزيع ← حسابات الزبائن (الأقدم أولاً).",
+  pf_range: "فترة مخصصة", pf_invoices: "عدد الفواتير المحسوبة", pf_income: "الإيرادات", pf_costs: "تكلفة البضاعة", pf_cogs: "تكلفة البضاعة المباعة", pf_expenses: "المصروفات الجارية",
+  pf_noRate: "فواتير مستثناة: لا سعر صرف لعملتها", pf_noCost: "فواتير بلا تكلفة مسجّلة (تُحسب تكلفتها صفراً): فواتير التوزيع والبيع السريع تسجّلها تلقائياً.",
+  pf_noSalaries: "لا رواتب مسجّلة في هذه الفترة. ادفعها من المصروفات ← الرواتب والأجور لتدخل في الربح.",
+  pf_note: "صافي الربح = المبيعات (بدون الضريبة) − تكلفة البضاعة المباعة − المصروفات الجارية. والبضاعة التي تشتريها ليست مصروفاً وقت الشراء: تصل للربح عند بيعها. وتكاليف الاستيراد داخل تكلفة الصنف، ودفعات البضاعة للشركة الأم لا تُحسب مرتين.",
 agencies: "الوكالات", type_agency: "وكالة / موزّع علامة", ag_over: "نظرة عامة", ag_agreements: "الاتفاقيات", ag_shipments: "الشحنات", ag_newAgency: "وكالة جديدة", ag_newShip: "شحنة جديدة",
   ag_none: "لا وكالات بعد. أضف أول اتفاقية مع الشركة الأم (مالكة العلامة).", ag_needAgency: "أضف اتفاقية وكالة أولاً.", ag_brand: "العلامة / الوكالة", ag_principal: "الشركة الأم", ag_country: "بلد الشركة الأم",
   ag_territory: "منطقة الوكالة", ag_territoryPh: "مثل: كل سورية / دمشق وريفها", ag_exclusive: "حصرية", ag_nonExclusive: "غير حصرية", ag_exclusiveQ: "الحصرية", ag_dealCur: "عملة التعامل",

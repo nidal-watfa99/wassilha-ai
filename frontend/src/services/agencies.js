@@ -42,3 +42,10 @@ export const brandStock = (biz, brand) => biz.inventory.filter((i) => (i.brand |
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const contractState = (a, today, days = 90) => { if (a.end && a.end < today) return "expired"; if (a.end) { const lim = new Date(today + "T00:00:00"); lim.setDate(lim.getDate() + days); if (a.end <= ymd(lim)) return "soon"; } return "active"; };
 export const endingContracts = (biz, today) => biz.agencies.filter((a) => contractState(a, today) === "soon");
+
+/* what we still owe the principal company for its shipments, in the main currency (shipments of agencies whose principal has this name) */
+export function principalOwed(biz, name) {
+  const n = (name || "").trim().toLowerCase(), ids = biz.agencies.filter((a) => (a.principal || "").trim().toLowerCase() === n).map((a) => a.id);
+  const ships = biz.shipments.filter((s) => ids.includes(s.agencyId));
+  return { n: ships.length, left: ships.reduce((a, s) => a + goodsOwed(s).left * fxFor(biz, s.currency, s.fx), 0) };
+}

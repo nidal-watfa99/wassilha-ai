@@ -8,6 +8,7 @@ import { F, Grid, useForm } from "../components/Form";
 import ContactProfile from "./ContactProfile";
 import { useBiz, setProfile, fmt } from "../services/biz";
 import { supplierStats } from "../services/expensehub";
+import { principalOwed } from "../services/agencies";
 import { waPhone } from "../services/phone";
 
 const SUP_TYPES = ["supplier", "wholesaler", "importer", "exporter", "partner"];
@@ -20,7 +21,7 @@ export default function LibrarySuppliers() {
   const [f, set] = useForm({ name: "", phone: "", email: "", type: "supplier", city: "", address: "" });
   const load = () => api.get("/contacts").then((d) => setContacts(d.items || [])).catch(() => {});
   React.useEffect(() => { load(); }, []);
-  const isSup = (c) => SUP_TYPES.includes(biz.profiles[c.id]?.type) || supplierStats(biz, c.name).n > 0 || biz.inventory.some((i) => [i.supplier, i.manufacturer].some((x) => (x || "").trim().toLowerCase() === c.name.trim().toLowerCase()));
+  const isSup = (c) => SUP_TYPES.includes(biz.profiles[c.id]?.type) || biz.agencies.some((a) => (a.principal || "").trim().toLowerCase() === c.name.trim().toLowerCase()) || supplierStats(biz, c.name).n > 0 || biz.inventory.some((i) => [i.supplier, i.manufacturer].some((x) => (x || "").trim().toLowerCase() === c.name.trim().toLowerCase()));
   const list = contacts.filter((c) => all || isSup(c));
   const create = async (e) => {
     e.preventDefault();
@@ -36,11 +37,12 @@ export default function LibrarySuppliers() {
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         <button className="btn btn-primary btn-sm" onClick={() => setAdding(true)}><IconPlus />{t("lb_newSup")}</button>
         <button className={`btn btn-sm ${all ? "btn-primary" : "btn-ghost"}`} onClick={() => setAll((v) => !v)}>{all ? t("lb_onlySup") : t("lb_allContacts")}</button></div>
-      {list.length === 0 ? <EmptyState icon={<IconBox />} text={t("lb_noSup")} /> : list.map((c) => { const pf = biz.profiles[c.id], st = supplierStats(biz, c.name), hasLoc = pf && pf.lat !== "" && pf.lat != null && pf.lng !== "" && pf.lng != null; return (
+      {list.length === 0 ? <EmptyState icon={<IconBox />} text={t("lb_noSup")} /> : list.map((c) => { const pf = biz.profiles[c.id], st = supplierStats(biz, c.name), po = principalOwed(biz, c.name), hasLoc = pf && pf.lat !== "" && pf.lat != null && pf.lng !== "" && pf.lng != null; return (
         <div key={c.id} className="glass card" style={{ display: "grid", gap: "0.45rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}><strong>{c.name}</strong><span className="badge badge-violet">{t("ct_t_" + (pf?.type || "supplier"))}</span></div>
           <div style={{ fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{[pf?.city, pf?.address].filter(Boolean).join(" · ") || t("lb_noAddress")}{(pf?.media || []).length > 0 && ` · 📎 ${pf.media.length}`}</div>
           {st.n > 0 && <div className="mini3">{[[t("inv_total"), st.total], [t("inv_paidAmt"), st.paid], [t("inv_left"), st.left]].map(([l, v], k) => <div key={k}><small>{l}</small><b dir="ltr" style={k === 2 && v > 0 ? { color: "var(--cyan)" } : undefined}>{fmt(v)}</b></div>)}</div>}
+          {po.left > 0 && <div style={{ fontSize: "var(--text-sm)" }}>{t("ag_payable")}: <b dir="ltr" style={{ color: "var(--cyan)" }}>{fmt(po.left)} {cur}</b></div>}
           <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
             {c.phone && <a className="btn btn-ghost btn-sm" href={`tel:${c.phone}`}>📞</a>}
             {c.phone && <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" href={`https://wa.me/${waPhone(c.phone)}`}>WhatsApp</a>}

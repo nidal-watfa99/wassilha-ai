@@ -6,7 +6,7 @@ import CurrencyPicker from "../components/CurrencyPicker";
 import { F, Grid, ltr, useForm } from "../components/Form";
 import { useBiz, expMain, upsert, remove, uid, fmt, todayStr } from "../services/biz";
 
-export const EXP_CATS = ["rent", "salaries", "purchases", "electricity", "water", "comm", "taxes", "fees", "insurance", "transport", "marketing", "maintenance", "utilities", "other"];
+export const EXP_CATS = ["rent", "salaries", "purchases", "electricity", "water", "comm", "taxes", "fees", "insurance", "transport", "fuel", "vehicle", "marketing", "maintenance", "utilities", "other"];
 const METHODS = ["cash", "transfer", "wallet", "card"];
 const blank = () => ({ date: todayStr(), category: "purchases", amount: "", payee: "", method: "cash", branch: "", note: "" });
 

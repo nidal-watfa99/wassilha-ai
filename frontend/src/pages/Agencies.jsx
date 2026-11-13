@@ -10,7 +10,11 @@ import MoneyInput from "../components/MoneyInput";
 import MediaAttach from "../components/MediaAttach";
 import ItemPicker from "../components/ItemPicker";
 import ContactProfile from "./ContactProfile";
-import { useBiz, upsert, remove, update, uid, fmt, nextNo, todayStr } from "../services/biz";
+import ExpenseHub from "./ExpenseHub";
+import LibrarySuppliers from "./LibrarySuppliers";
+import ProfitStatement from "./ProfitStatement";
+import { Link } from "react-router-dom";
+import { useBiz, upsert, remove, update, uid, fmt, nextNo, todayStr, totals, paidOf, leftOf } from "../services/biz";
 import { compatible, unitLabel } from "../services/units";
 import { landed, applyReceive, goodsOwed, brandSales, brandStock, contractState, fxFor } from "../services/agencies";
 import { delMedia } from "../services/media";
@@ -73,8 +77,8 @@ export default function Agencies() {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       <div className="section-title"><h2>{t("agencies")}</h2>
-        <button className="btn btn-primary btn-sm" onClick={() => (tab === "ship" ? (biz.agencies.length ? openShip(null) : toast(t("ag_needAgency"), "error")) : openAg(null))}><IconPlus />{tab === "ship" ? t("ag_newShip") : t("ag_newAgency")}</button></div>
-      <div className="tabs">{[["over", "ag_over"], ["agr", "ag_agreements"], ["ship", "ag_shipments"]].map(([k, l]) => <button key={k} className={`btn btn-sm ${tab === k ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab(k)}>{t(l)}</button>)}</div>
+        {["over", "agr", "ship"].includes(tab) && <button className="btn btn-primary btn-sm" onClick={() => (tab === "ship" ? (biz.agencies.length ? openShip(null) : toast(t("ag_needAgency"), "error")) : openAg(null))}><IconPlus />{tab === "ship" ? t("ag_newShip") : t("ag_newAgency")}</button>}</div>
+      <div className="tabs">{[["over", "ag_over"], ["agr", "ag_agreements"], ["ship", "ag_shipments"], ["inv", "ag_invoices"], ["exp", "ag_expenses"], ["sup", "ag_dealers"], ["profit", "ag_profit"]].map(([k, l]) => <button key={k} className={`btn btn-sm ${tab === k ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab(k)}>{t(l)}</button>)}</div>
 
       {(tab === "over" || tab === "agr") && (biz.agencies.length === 0 ? <EmptyState icon={<IconBox />} text={t("ag_none")} /> : biz.agencies.map((a) => {
         const st = contractState(a, today), sales = brandSales(biz, a.brand, `${year}-01-01`, `${year}-12-31`), target = Number(a.target) || 0, hit = target > 0 && sales >= target;
@@ -96,6 +100,23 @@ export default function Agencies() {
           </div>); }))}
       {tab === "over" && biz.agencies.length > 0 && <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-3)" }}>{t("ag_overNote")}</p>}
 
+      {tab === "exp" && <ExpenseHub />}
+      {tab === "sup" && <LibrarySuppliers />}
+      {tab === "profit" && <ProfitStatement />}
+      {tab === "inv" && (() => {
+        const dn = new Set(biz.dorders.map((o) => o.no)), invs = biz.invoices.filter((i) => dn.has(i.notes)).sort((a, b) => (b.issueDate || "").localeCompare(a.issueDate || ""));
+        const fxI = (i) => ((i.currency || cur) === cur ? 1 : Number(i.fx) || biz.rates[i.currency] || 0);
+        const tot = invs.reduce((a, i) => a + totals(i).total * fxI(i), 0), paid = invs.reduce((a, i) => a + paidOf(i) * fxI(i), 0);
+        return (<>
+          <p style={{ margin: 0, fontSize: "var(--text-sm)", color: "var(--text-2)" }}>{t("ag_invHelp")}</p>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}><Link className="btn btn-ghost btn-sm" to="/distribution">{t("distribution")}</Link><Link className="btn btn-ghost btn-sm" to="/invoices">{t("invoices")}</Link></div>
+          {invs.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : (<>
+            <Summary cur={cur} rows={[{ label: t("inv_total"), value: tot, sub: true }, { label: t("inv_paidAmt"), value: paid, tone: "minus" }]} total={{ label: t("inv_left"), value: Math.max(tot - paid, 0) }} />
+            {invs.map((i) => <div key={i.id} className="glass card" style={{ display: "grid", gap: "0.3rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}><strong><bdi dir="ltr">{i.no}</bdi> · {i.customer}</strong><span className={`badge ${i.status === "paid" ? "badge-green" : i.status === "partial" ? "badge-blue" : "badge-violet"}`}>{t("inv_" + i.status)}</span></div>
+              <div className="mini3">{[[t("inv_total"), totals(i).total], [t("inv_paidAmt"), paidOf(i)], [t("inv_left"), leftOf(i)]].map(([l, v], k) => <div key={k}><small>{l}</small><b dir="ltr" style={k === 2 && v > 0 ? { color: "var(--cyan)" } : undefined}>{fmt(v)} <small>{i.currency}</small></b></div>)}</div></div>)}</>)}
+        </>);
+      })()}
       {tab === "ship" && (biz.shipments.length === 0 ? <EmptyState icon={<IconBox />} text={t("b_none")} /> : biz.shipments.slice().sort((a, b) => (b.orderDate || "").localeCompare(a.orderDate || "")).map((s) => { const L = landed(s, biz), o = goodsOwed(s); return (
         <div key={s.id} className="glass card" style={{ display: "grid", gap: "0.4rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}><strong><bdi dir="ltr">{s.no}</bdi> · {ag(s.agencyId)?.brand}</strong><span className={`badge ${s.received ? "badge-green" : "badge-blue"}`}>{t("ag_s_" + s.status)}</span></div>

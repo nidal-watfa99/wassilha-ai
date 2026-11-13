@@ -74,7 +74,7 @@ export default function Distribution() {
       return { ...s, inventory: inv, batches };
     });
     const items = o.lines.flatMap((l) => [{ desc: l.name, qty: Number(l.qty), price: Number(l.price) || 0, unit: l.unit }, ...(Number(l.bonus) > 0 ? [{ desc: `${l.name} (${t("ds_bonus")})`, qty: Number(l.bonus), price: 0, unit: l.unit }] : [])]);
-    upsert("invoices", { id: uid(), no, type: "invoice", customer: o.customer, issueDate: today, dueDate: "", currency: o.currency || cur, discount: o.discount || 0, tax: o.tax || 0, notes: o.no, paidAmount: paid, status: paid >= c.total - 0.005 ? "paid" : paid > 0 ? "partial" : "unpaid", items });
+    upsert("invoices", { id: uid(), no, type: "invoice", customer: o.customer, issueDate: today, dueDate: "", fx, cost: +Object.entries(need).reduce((a, [id, q]) => a + q * (Number(it(id).cost) || 0), 0).toFixed(2), currency: o.currency || cur, discount: o.discount || 0, tax: o.tax || 0, notes: o.no, paidAmount: paid, status: paid >= c.total - 0.005 ? "paid" : paid > 0 ? "partial" : "unpaid", items });
     ensureArea(o.area); upsert("dorders", { ...o, status: "confirmed", invoiceNo: no, batchesUsed: taken, confirmedAt: today }); close();
     toast(`${t("ho_invoiced")} ${no}`, "success");
   };
